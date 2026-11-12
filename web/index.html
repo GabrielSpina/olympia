@@ -8,6 +8,7 @@
   <title>Olympia · Notebook e treinos</title>
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./editor.css">
+  <link rel="stylesheet" href="./choices.css">
   <script src="./app.js" defer></script>
 </head>
 <body>
@@ -62,13 +63,19 @@
     <form id="edit-form" method="dialog" class="settings">
       <div class="dialog-head"><div><p class="eyebrow">NOTEBOOK</p><h2 id="edit-title">Editar dia</h2></div><button id="close-edit-button" type="button" class="icon-button" aria-label="Fechar">×</button></div>
       <p id="edit-date"></p>
-      <label>Treino de musculação<input id="edit-session" list="session-options" maxlength="120" placeholder="Ex.: Peito, Costas ou REST" required></label>
-      <datalist id="session-options"></datalist>
+      <label>Treino de musculação<select id="edit-session" required>
+        <option value="ARMS">ARMS</option>
+        <option value="DELTS">DELTS</option>
+        <option value="BACK">BACK</option>
+        <option value="CHEST">CHEST</option>
+        <option value="LEG">LEG</option>
+        <option value="REST">Sem musculação</option>
+      </select></label>
       <fieldset class="sports-fieldset"><legend>Outras modalidades neste dia</legend>
-        <label><input type="checkbox" name="sport" value="Jiu-jitsu">Jiu-jitsu</label>
-        <label><input type="checkbox" name="sport" value="Judô">Judô</label>
-        <label><input type="checkbox" name="sport" value="Wrestling">Wrestling</label>
-        <label><input type="checkbox" name="sport" value="Sambo">Sambo</label>
+        <label class="sport-option"><input type="checkbox" name="sport" value="Jiu-jitsu"><span>Jiu-jitsu</span></label>
+        <label class="sport-option"><input type="checkbox" name="sport" value="Judô"><span>Judô</span></label>
+        <label class="sport-option"><input type="checkbox" name="sport" value="Wrestling"><span>Wrestling</span></label>
+        <label class="sport-option"><input type="checkbox" name="sport" value="Sambo"><span>Sambo</span></label>
       </fieldset>
       <div class="dialog-actions"><button id="cancel-edit-button" type="button" class="quiet-button">Cancelar</button><button id="save-edit-button" type="submit" class="primary-button">Salvar alterações</button></div>
     </form>
