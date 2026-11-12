@@ -60,7 +60,7 @@
 
   <dialog id="edit-dialog" aria-labelledby="edit-title">
     <form id="edit-form" method="dialog" class="settings">
-      <div class="dialog-head"><div><p class="eyebrow">NOTEBOOK</p><h2 id="edit-title">Editar dia</h2></div><button class="icon-button" value="cancel" aria-label="Fechar">×</button></div>
+      <div class="dialog-head"><div><p class="eyebrow">NOTEBOOK</p><h2 id="edit-title">Editar dia</h2></div><button id="close-edit-button" type="button" class="icon-button" aria-label="Fechar">×</button></div>
       <p id="edit-date"></p>
       <label>Treino de musculação<input id="edit-session" list="session-options" maxlength="120" placeholder="Ex.: Peito, Costas ou REST" required></label>
       <datalist id="session-options"></datalist>
@@ -70,7 +70,7 @@
         <label><input type="checkbox" name="sport" value="Wrestling">Wrestling</label>
         <label><input type="checkbox" name="sport" value="Sambo">Sambo</label>
       </fieldset>
-      <div class="dialog-actions"><button value="cancel" class="quiet-button">Cancelar</button><button id="save-edit-button" type="submit" class="primary-button">Salvar alterações</button></div>
+      <div class="dialog-actions"><button id="cancel-edit-button" type="button" class="quiet-button">Cancelar</button><button id="save-edit-button" type="submit" class="primary-button">Salvar alterações</button></div>
     </form>
   </dialog>
 </body>
