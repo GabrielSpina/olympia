@@ -1,12 +1,7 @@
-#edit-session{min-height:58px;padding:13px 16px;font-size:18px;font-weight:800;letter-spacing:.03em;border:2px solid #577077;background:#1b3239;color:#f4faf7}
-#edit-session:focus{border-color:#b2ec63}
-.sports-fieldset{border:0;padding:0;margin:22px 0}
-.sports-fieldset legend{padding:0;margin-bottom:10px;color:#d8e8e5;font-size:15px;font-weight:800}
-.sports-fieldset .sport-option{display:flex;align-items:center;gap:12px;min-height:58px;margin:0;padding:12px 14px;border:2px solid #46616a;border-radius:12px;background:#1b3239;color:#ecf5f1;font-size:17px;font-weight:800;cursor:pointer}
-.sports-fieldset .sport-option:hover{border-color:#b2ec63}
-.sports-fieldset .sport-option:has(input:checked){border-color:#b2ec63;background:#304d38;color:#f4ffe8}
-.sports-fieldset .sport-option input{width:22px;height:22px;flex:0 0 22px;accent-color:#b2ec63}
-.sports-fieldset{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.sports-fieldset legend{grid-column:1/-1}
-@media(max-width:440px){.sports-fieldset{grid-template-columns:1fr}}
+#edit-session{width:100%}
+.activity-list{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-bottom:8px}
+.activity-list .activity-name{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:8px 12px;border:1px solid #557079;border-radius:10px;background:#213a42;color:#f0f6f3;font-size:16px;font-weight:800;line-height:1.2;text-align:left;white-space:normal}
+.activity-list .activity-name:hover,.activity-list .activity-name:focus-visible{border-color:#b2ec63;color:#f5ffe8;text-decoration:none;background:#2c4a40}
+.activity-list .activity-name:disabled{opacity:.6;cursor:wait}
+.activity-pencil{color:#b2ec63;font-size:13px;font-weight:600}
 
