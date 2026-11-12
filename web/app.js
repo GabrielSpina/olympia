@@ -4,7 +4,7 @@ const OWNER = "GabrielSpina";
 const DATA_REPO = "olympia-dados";
 const API = `https://api.github.com/repos/${OWNER}/${DATA_REPO}/contents/`;
 const $ = (id) => document.getElementById(id);
-const state = { notebook: [], divisions: [], mode: "none", busy: false };
+const state = { notebook: [], divisions: [], food: { days: [] }, mode: "none", busy: false };
 const SPORTS = ["Jiu-jitsu", "Judô", "Wrestling", "Sambo"];
 let editingId = null;
 
@@ -23,6 +23,10 @@ function validNotebook(rows) {
 
 function validDivisions(rows) {
   return Array.isArray(rows) && rows.every((d) => d && typeof d.name === "string" && Array.isArray(d.rows));
+}
+
+function validFood(data) {
+  return data && Array.isArray(data.days) && data.days.every((day) => day && /^\d{4}-\d\d-\d\d$/.test(day.date) && day.target && Number.isFinite(day.target.kcal) && Number.isFinite(day.target.proteinG) && Array.isArray(day.items) && Array.isArray(day.plan));
 }
 
 function decodeBase64(value) {
@@ -49,10 +53,11 @@ async function githubFile(name, token) {
 
 async function loadGithub(token) {
   notice("Carregando seus dados…");
-  const [notebook, treinos] = await Promise.all([githubFile("notebook.json", token), githubFile("treinos.json", token)]);
-  if (!validNotebook(notebook.data) || !validDivisions(treinos.data)) throw new Error("Os arquivos JSON não têm o formato esperado.");
+  const [notebook, treinos, food] = await Promise.all([githubFile("notebook.json", token), githubFile("treinos.json", token), githubFile("alimentacao.json", token)]);
+  if (!validNotebook(notebook.data) || !validDivisions(treinos.data) || !validFood(food.data)) throw new Error("Os arquivos JSON não têm o formato esperado.");
   state.notebook = notebook.data;
   state.divisions = treinos.data;
+  state.food = food.data;
   state.mode = "github";
   sessionStorage.setItem("olympia-token", token);
   render();
@@ -177,25 +182,62 @@ function renderTreinos() {
   }
 }
 
-function render() { renderNotebook(); renderTreinos(); }
+function foodNumber(value) { return Math.round(Number(value) || 0).toLocaleString("pt-BR"); }
+
+function renderFood() {
+  const day = state.food.days.find((entry) => entry.date === $("food-date").value);
+  if (!day) {
+    $("food-content").innerHTML = `<div class="empty">${state.mode === "none" ? "Conecte seus dados para ver a alimentação." : "Nenhum registro alimentar para este dia."}</div>`;
+    return;
+  }
+  const totals = day.items.reduce((sum, item) => ({ kcal: sum.kcal + (Number(item.kcal) || 0), proteinG: sum.proteinG + (Number(item.proteinG) || 0) }), { kcal: 0, proteinG: 0 });
+  const metric = (label, unit, consumed, target) => {
+    const remaining = Math.max(0, target - consumed);
+    const percent = target > 0 ? Math.round(consumed / target * 100) : 0;
+    const restPercent = Math.max(0, 100 - percent);
+    const width = Math.min(100, Math.max(0, percent));
+    return `<article class="food-metric"><div class="metric-top"><div><span class="metric-label">${label}</span><strong>${foodNumber(consumed)}<small> / ${foodNumber(target)} ${unit}</small></strong></div><span class="metric-percent">${percent}%</span></div><div class="metric-track" role="progressbar" aria-label="${label} consumidas" aria-valuenow="${Math.round(consumed)}" aria-valuemin="0" aria-valuemax="${Math.round(target)}"><span style="width:${width}%"></span></div><div class="metric-details"><span><b>${foodNumber(consumed)} ${unit}</b> consumidas · ${percent}%</span><span><b>${foodNumber(remaining)} ${unit}</b> faltam · ${restPercent}%</span></div></article>`;
+  };
+  const items = day.items.length ? day.items.map((item) => `<li><span>${escapeHtml(item.name)}</span><b>${foodNumber(item.kcal)} kcal <small>· ${foodNumber(item.proteinG)} g prot.</small></b></li>`).join("") : `<li>Nenhuma refeição registrada.</li>`;
+  const plan = day.plan.length ? day.plan.map((meal) => `<article class="plan-meal"><time>${escapeHtml(meal.time)}</time><div><h4>${escapeHtml(meal.name)}</h4><p>${escapeHtml(meal.description)}</p></div><strong>~${foodNumber(meal.kcal)} kcal<small>~${foodNumber(meal.proteinG)} g proteína</small></strong></article>`).join("") : `<div class="empty">Sem refeições planejadas para o restante do dia.</div>`;
+  $("food-content").innerHTML = `<p class="food-note">${escapeHtml(day.note || "Valores estimados; porções e marcas podem alterar os totais.")}</p><div class="food-metrics">${metric("CALORIAS", "kcal", totals.kcal, day.target.kcal)}${metric("PROTEÍNA", "g", totals.proteinG, day.target.proteinG)}</div><div class="food-columns"><section class="food-box"><div class="food-box-head"><p class="eyebrow">CONSUMIDO</p><h3>Registro do dia</h3></div><ul class="food-items">${items}</ul></section><section class="food-box"><div class="food-box-head"><p class="eyebrow">PRÓXIMAS REFEIÇÕES</p><h3>Resto do dia</h3></div><div class="food-plan">${plan}</div><p class="plan-note">Sugestões planejadas. Elas só entram no total quando forem registradas.</p></section></div>`;
+}
+
+async function refreshFood() {
+  if (state.mode !== "github" || state.busy) return;
+  const token = sessionStorage.getItem("olympia-token");
+  if (!token) return;
+  try {
+    const file = await githubFile("alimentacao.json", token);
+    if (!validFood(file.data)) throw new Error("Diário alimentar inválido.");
+    state.food = file.data;
+    renderFood();
+  } catch (error) { notice(`Não foi possível atualizar a alimentação: ${error.message}`, true); }
+}
+
+function render() { renderNotebook(); renderTreinos(); renderFood(); }
 
 function activateTab(name) {
-  for (const tab of ["notebook", "treinos"]) {
+  for (const tab of ["notebook", "treinos", "alimentacao"]) {
     const active = tab === name;
     $(`tab-${tab}`).classList.toggle("active", active);
     $(`tab-${tab}`).setAttribute("aria-selected", String(active));
     $(`${tab}-panel`).hidden = !active;
   }
+  if (name === "alimentacao") refreshFood();
 }
 
 const todayParts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).map((part) => [part.type, part.value]));
 const todayKey = `${todayParts.year}-${todayParts.month}-${todayParts.day}`;
 $("month-filter").value = `${todayParts.year}-${todayParts.month}`;
+$("food-date").value = todayKey;
 $("month-filter").addEventListener("input", renderNotebook);
 $("search-filter").addEventListener("input", renderNotebook);
 $("division-filter").addEventListener("change", renderTreinos);
+$("food-date").addEventListener("change", renderFood);
 $("tab-notebook").addEventListener("click", () => activateTab("notebook"));
 $("tab-treinos").addEventListener("click", () => activateTab("treinos"));
+$("tab-alimentacao").addEventListener("click", () => activateTab("alimentacao"));
 $("notebook-list").addEventListener("click", (event) => {
   const statusButton = event.target.closest("button[data-status]");
   if (statusButton) { saveRecord(statusButton.dataset.id, { status: statusButton.dataset.status }); return; }
@@ -226,19 +268,21 @@ $("connect-button").addEventListener("click", async () => {
 });
 $("disconnect-button").addEventListener("click", () => {
   sessionStorage.removeItem("olympia-token");
-  state.mode = "none"; state.notebook = []; state.divisions = [];
+  state.mode = "none"; state.notebook = []; state.divisions = []; state.food = { days: [] };
   render(); notice("Desconectado."); $("settings-dialog").close();
 });
 $("load-files-button").addEventListener("click", async () => {
   try {
-    const notebookFile = $("notebook-file").files[0], treinosFile = $("treinos-file").files[0];
+    const notebookFile = $("notebook-file").files[0], treinosFile = $("treinos-file").files[0], foodFile = $("food-file").files[0];
     if (!notebookFile || !treinosFile) throw new Error("Selecione os dois arquivos JSON.");
     const [notebook, divisions] = await Promise.all([notebookFile.text().then(JSON.parse), treinosFile.text().then(JSON.parse)]);
     if (!validNotebook(notebook) || !validDivisions(divisions)) throw new Error("Os arquivos JSON não têm o formato esperado.");
+    const food = foodFile ? JSON.parse(await foodFile.text()) : { days: [] };
+    if (!validFood(food)) throw new Error("O arquivo de alimentação não tem o formato esperado.");
     const local = JSON.parse(localStorage.getItem("olympia-local-notebook") || "null");
     const marks = new Map((validNotebook(local) ? local : []).filter((r) => r.updatedAt).map((r) => [r.id, r]));
     state.notebook = notebook.map((r) => marks.has(r.id) ? { ...r, status: marks.get(r.id).status, session: marks.get(r.id).session, sports: marks.get(r.id).sports, updatedAt: marks.get(r.id).updatedAt } : r);
-    state.divisions = divisions; state.mode = "local";
+    state.divisions = divisions; state.food = food; state.mode = "local";
     sessionStorage.removeItem("olympia-token");
     render(); notice("Arquivos abertos. Alterações salvas apenas neste navegador."); $("settings-dialog").close();
   } catch (error) { notice(error.message, true); }
@@ -248,4 +292,5 @@ render();
 const savedToken = sessionStorage.getItem("olympia-token");
 if (savedToken) loadGithub(savedToken).catch((error) => notice(error.message, true));
 else notice("Conecte o repositório privado em Dados para começar.");
-
+setInterval(refreshFood, 60000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshFood(); });
