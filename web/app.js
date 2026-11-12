@@ -194,7 +194,6 @@ $("notebook-list").addEventListener("click", (event) => {
 });
 $("edit-form").addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (event.submitter?.value === "cancel") { $("edit-dialog").close(); editingId = null; return; }
   const session = $("edit-session").value.trim();
   if (!session || session.length > 120 || !editingId) return;
   const row = state.notebook.find((item) => item.id === editingId);
@@ -207,6 +206,9 @@ $("edit-form").addEventListener("submit", async (event) => {
   $("save-edit-button").disabled = false;
   if (saved) { $("edit-dialog").close(); editingId = null; }
 });
+$("close-edit-button").addEventListener("click", () => $("edit-dialog").close());
+$("cancel-edit-button").addEventListener("click", () => $("edit-dialog").close());
+$("edit-dialog").addEventListener("close", () => { editingId = null; });
 $("settings-button").addEventListener("click", () => $("settings-dialog").showModal());
 $("connect-button").addEventListener("click", async () => {
   try { await loadGithub($("token-input").value.trim()); $("token-input").value = ""; $("settings-dialog").close(); }
