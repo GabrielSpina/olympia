@@ -1,15 +1,14 @@
 {
   "name": "Olympia",
   "short_name": "Olympia",
-  "description": "Notebook e treinos de musculação",
+  "description": "Treino e alimentação no mesmo lugar",
   "start_url": "/olympia/",
   "scope": "/olympia/",
   "display": "standalone",
-  "background_color": "#101a22",
-  "theme_color": "#101a22",
+  "background_color": "#090909",
+  "theme_color": "#090909",
   "icons": [
     { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }
-
