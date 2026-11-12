@@ -1,1 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090909">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Olympia">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com; script-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+  <title>Olympia · Treino e alimentação</title>
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./editor.css">
+  <link rel="stylesheet" href="./choices.css?v=18">
+  <link rel="stylesheet" href="./theme.css?v=22">
+  <script src="./app.js?v=22" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">O</span><div><strong>OLYMPIA</strong><small>SEU DIA. SUA EVOLUÇÃO.</small></div></div>
+      <button id="settings-button" class="quiet-button" type="button" aria-label="Configurar dados">⚙ <span>Dados</span></button>
+    </header>
 
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div><p class="eyebrow">THE ROAD TO OLYMPIA</p><h1 id="page-title">CONSTRUA O PRÓXIMO DIA.</h1><p>Treino, alimentação e consistência no mesmo palco.</p></div>
+        <div class="hero-stat"><span id="done-count">—</span><small>treinos feitos no período</small></div>
+      </section>
+
+      <nav class="tabs" aria-label="Áreas do Olympia">
+        <button class="tab active" id="tab-notebook" type="button" aria-selected="true">Notebook</button>
+        <button class="tab" id="tab-treinos" type="button" aria-selected="false">Treinos</button>
+        <button class="tab" id="tab-alimentacao" type="button" aria-selected="false">Alimentação</button>
+      </nav>
+
+      <div id="notice" class="notice" role="status"></div>
+
+      <section id="notebook-panel" aria-labelledby="tab-notebook">
+        <div class="section-heading"><div><p class="eyebrow">ACOMPANHAMENTO</p><h2>Notebook</h2></div><div class="filters"><label>Mês <input id="month-filter" type="month"></label><label>Buscar <input id="search-filter" type="search" placeholder="Treino ou anotação"></label></div></div>
+        <div id="notebook-summary" class="summary"></div>
+        <div id="notebook-list" class="notebook-list"></div>
+      </section>
+
+      <section id="treinos-panel" aria-labelledby="tab-treinos" hidden>
+        <div class="section-heading"><div><p class="eyebrow">PLANEJAMENTO</p><h2>Treinos</h2></div><label>Divisão <select id="division-filter"></select></label></div>
+        <p class="help-text">Conteúdo importado da planilha Workout. A divisão 13-2 é exibida primeiro.</p>
+        <div id="training-grid" class="training-grid"></div>
+      </section>
+
+      <section id="alimentacao-panel" aria-labelledby="tab-alimentacao" hidden>
+        <div class="section-heading"><div><p class="eyebrow">NUTRIÇÃO / DIÁRIO</p><h2>Alimentação</h2></div><label>Dia <input id="food-date" type="date"></label></div>
+        <div id="food-content" class="food-content"></div>
+      </section>
+    </main>
+    <footer>Olympia · Dados de treino e alimentação guardados no seu repositório privado do GitHub</footer>
+  </div>
+
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <form method="dialog" class="settings">
+      <div class="dialog-head"><div><p class="eyebrow">CONEXÃO</p><h2 id="settings-title">Seus dados</h2></div><button class="icon-button" value="cancel" aria-label="Fechar">×</button></div>
+      <p>Conecte um token de acesso fino do GitHub com permissão <b>Contents: Read and write</b> somente para <b>GabrielSpina/olympia-dados</b>. O token fica salvo neste navegador até você desconectar ou limpar os dados do site. <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">Criar token no GitHub ↗</a></p>
+      <label>Token GitHub<input id="token-input" type="password" autocomplete="off" placeholder="github_pat_…"></label>
+      <div class="dialog-actions"><button id="disconnect-button" type="button" class="quiet-button">Desconectar</button><button id="connect-button" type="button" class="primary-button">Conectar</button></div>
+      <div class="divider">ou</div>
+      <p>Para testar localmente, importe os arquivos JSON do repositório privado. Alterações feitas neste modo ficam apenas neste navegador.</p>
+      <div class="file-inputs"><label>Notebook JSON<input id="notebook-file" type="file" accept=".json,application/json"></label><label>Treinos JSON<input id="treinos-file" type="file" accept=".json,application/json"></label><label>Alimentação JSON (opcional)<input id="food-file" type="file" accept=".json,application/json"></label></div>
+      <button id="load-files-button" type="button" class="secondary-button">Abrir arquivos locais</button>
+    </form>
+  </dialog>
+
+  <dialog id="edit-dialog" aria-labelledby="edit-title">
+    <form id="edit-form" method="dialog" class="settings">
+      <div class="dialog-head"><div><p class="eyebrow">NOTEBOOK</p><h2 id="edit-title">Editar dia</h2></div><button id="close-edit-button" type="button" class="icon-button" aria-label="Fechar">×</button></div>
+      <p id="edit-date"></p>
+      <label>Treino de musculação<select id="edit-session" required>
+        <option value="ARMS">ARMS</option>
+        <option value="DELTS">DELTS</option>
+        <option value="BACK">BACK</option>
+        <option value="CHEST">CHEST</option>
+        <option value="LEG">LEG</option>
+        <option value="REST">REST</option>
+      </select></label>
+      <fieldset class="sports-fieldset"><legend>Outras modalidades neste dia</legend>
+        <label><input type="checkbox" name="sport" value="Jiu-jitsu">Jiu-jitsu</label>
+        <label><input type="checkbox" name="sport" value="Judô">Judô</label>
+        <label><input type="checkbox" name="sport" value="Wrestling">Wrestling</label>
+        <label><input type="checkbox" name="sport" value="Sambo">Sambo</label>
+      </fieldset>
+      <div class="dialog-actions"><button id="cancel-edit-button" type="button" class="quiet-button">Cancelar</button><button id="save-edit-button" type="submit" class="primary-button">Salvar alterações</button></div>
+    </form>
+  </dialog>
+</body>
+</html>
