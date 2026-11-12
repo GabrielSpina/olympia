@@ -5,6 +5,8 @@ const DATA_REPO = "olympia-dados";
 const API = `https://api.github.com/repos/${OWNER}/${DATA_REPO}/contents/`;
 const $ = (id) => document.getElementById(id);
 const state = { notebook: [], divisions: [], mode: "none", busy: false };
+const SPORTS = ["Jiu-jitsu", "Judô", "Wrestling", "Sambo"];
+let editingId = null;
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -54,11 +56,11 @@ async function loadGithub(token) {
   state.mode = "github";
   sessionStorage.setItem("olympia-token", token);
   render();
-  notice("Conectado ao repositório privado. Suas marcações serão salvas no GitHub.");
+  notice("Conectado ao repositório privado. Suas alterações serão salvas no GitHub.");
 }
 
-async function saveStatus(id, status) {
-  if (state.busy) return;
+async function saveRecord(id, changes) {
+  if (state.busy || state.mode === "none") return false;
   state.busy = true;
   renderNotebook();
   try {
@@ -71,12 +73,12 @@ async function saveStatus(id, status) {
         if (!validNotebook(file.data)) throw new Error("Notebook inválido no repositório privado.");
         const row = file.data.find((item) => item.id === id);
         if (!row) throw new Error("Este registro não existe mais no Notebook.");
-        row.status = status;
+        Object.assign(row, changes);
         row.updatedAt = new Date().toISOString();
         const response = await fetch(API + "notebook.json", {
           method: "PUT",
           headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "Content-Type": "application/json", "X-GitHub-Api-Version": "2022-11-28" },
-          body: JSON.stringify({ message: `Registrar treino ${row.date}: ${status}`, content: encodeBase64(JSON.stringify(file.data, null, 2) + "\n"), sha: file.sha }),
+          body: JSON.stringify({ message: `Atualizar Notebook ${row.date}`, content: encodeBase64(JSON.stringify(file.data, null, 2) + "\n"), sha: file.sha }),
         });
         if (response.status === 409) continue;
         if (!response.ok) throw new Error(`Não foi possível salvar no GitHub (${response.status}).`);
@@ -85,39 +87,56 @@ async function saveStatus(id, status) {
         break;
       }
       if (!saved) throw new Error("O arquivo mudou durante a gravação. Tente novamente.");
-      notice("Marcação salva no GitHub.");
+      notice("Alteração salva no GitHub.");
     } else if (state.mode === "local") {
       const row = state.notebook.find((item) => item.id === id);
       if (!row) throw new Error("Registro não encontrado.");
-      row.status = status;
+      Object.assign(row, changes);
       row.updatedAt = new Date().toISOString();
       localStorage.setItem("olympia-local-notebook", JSON.stringify(state.notebook));
-      notice("Marcação salva neste navegador. Conecte o GitHub para guardar no repositório privado.");
+      notice("Alteração salva neste navegador. Conecte o GitHub para guardar no repositório privado.");
     }
+    return true;
   } catch (error) {
     notice(error.message, true);
+    return false;
   } finally {
     state.busy = false;
     renderNotebook();
   }
 }
 
+function openEditor(id) {
+  const row = state.notebook.find((item) => item.id === id);
+  if (!row || state.busy) return;
+  editingId = id;
+  $("edit-date").textContent = new Date(`${row.date}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  $("edit-session").value = row.session || "";
+  const options = [...new Set(state.notebook.map((item) => String(item.session || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  $("session-options").innerHTML = options.map((option) => `<option value="${escapeHtml(option)}"></option>`).join("");
+  for (const checkbox of $("edit-form").querySelectorAll('input[name="sport"]')) checkbox.checked = Array.isArray(row.sports) && row.sports.includes(checkbox.value);
+  $("edit-dialog").showModal();
+  $("edit-session").focus();
+}
+
 function renderNotebook() {
   const month = $("month-filter").value;
   const query = $("search-filter").value.trim().toLocaleLowerCase("pt-BR");
-  const rows = state.notebook.filter((r) => (!month || r.date.startsWith(month)) && (!query || `${r.session ?? ""} ${r.notes ?? ""}`.toLocaleLowerCase("pt-BR").includes(query))).sort((a, b) => b.date.localeCompare(a.date) || b.sourceRow - a.sourceRow);
+  const rows = state.notebook.filter((r) => (!month || r.date.startsWith(month)) && (!query || `${r.session ?? ""} ${r.notes ?? ""} ${(r.sports || []).join(" ")}`.toLocaleLowerCase("pt-BR").includes(query))).sort((a, b) => b.date.localeCompare(a.date) || b.sourceRow - a.sourceRow);
   const workouts = rows.filter((r) => !/^rest\b/i.test(String(r.session ?? "").trim()));
   const done = workouts.filter((r) => r.status === "done").length;
   const skipped = workouts.filter((r) => r.status === "skipped").length;
   $("done-count").textContent = state.notebook.length ? String(done) : "—";
   $("notebook-summary").innerHTML = `<span class="chip"><strong>${workouts.length}</strong> treinos no filtro</span><span class="chip"><strong>${done}</strong> feitos</span><span class="chip"><strong>${skipped}</strong> não feitos</span>`;
   $("notebook-list").innerHTML = rows.length ? rows.map((r) => {
-    const day = Number(r.date.slice(8));
-    const date = new Date(`${r.date}T12:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+    const dateObject = new Date(`${r.date}T12:00:00`);
+    const weekday = dateObject.toLocaleDateString("pt-BR", { weekday: "long" });
+    const date = dateObject.toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" });
     const note = [r.notes, typeof r.weightKg === "number" ? `${r.weightKg} kg` : null].filter(Boolean).join(" · ");
     const status = r.status === "done" ? "Feito" : r.status === "skipped" ? "Não feito" : "Sem marcação";
     const rest = /^rest\b/i.test(String(r.session ?? "").trim());
-    return `<article class="entry"><div class="entry-date">${day}<small>${escapeHtml(date)}</small></div><div class="entry-main"><h3>${escapeHtml(r.session || "Treino")}</h3><p>${escapeHtml(r.weekday || "")} · ${escapeHtml(status)}${note ? ` · ${escapeHtml(note)}` : ""}</p></div><div class="entry-actions">${rest ? "<span class=\"chip\">Descanso</span>" : `<button class="status-button done ${r.status === "done" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="done" ${state.busy ? "disabled" : ""}>✓ Fiz</button><button class="status-button skipped ${r.status === "skipped" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="skipped" ${state.busy ? "disabled" : ""}>× Não fiz</button>`}</div></article>`;
+    const sports = Array.isArray(r.sports) ? r.sports.filter((sport) => SPORTS.includes(sport)) : [];
+    return `<article class="entry"><div class="entry-date">${escapeHtml(weekday)}<small>${escapeHtml(date)}</small></div><div class="entry-main"><button class="entry-title" type="button" data-edit="${escapeHtml(r.id)}" aria-label="Editar treino e modalidades de ${escapeHtml(date)}" ${state.busy ? "disabled" : ""}>${escapeHtml(r.session || "Treino")} ✎</button><div class="entry-hint">Clique para trocar o treino ou acrescentar modalidades</div><p>${escapeHtml(rest ? "Descanso" : status)}${note ? ` · ${escapeHtml(note)}` : ""}</p>${sports.length ? `<div class="sport-list">${sports.map((sport) => `<span class="sport-tag">${escapeHtml(sport)}</span>`).join("")}</div>` : ""}</div><div class="entry-actions">${rest ? "<span class=\"chip\">Descanso</span>" : `<button class="status-button done ${r.status === "done" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="done" ${state.busy ? "disabled" : ""}>✓ Fiz</button><button class="status-button skipped ${r.status === "skipped" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="skipped" ${state.busy ? "disabled" : ""}>× Não fiz</button>`}</div></article>`;
   }).join("") : `<div class="empty">${state.mode === "none" ? "Conecte seus dados para ver o Notebook." : "Nenhum registro neste filtro."}</div>`;
 }
 
@@ -168,8 +187,25 @@ $("division-filter").addEventListener("change", renderTreinos);
 $("tab-notebook").addEventListener("click", () => activateTab("notebook"));
 $("tab-treinos").addEventListener("click", () => activateTab("treinos"));
 $("notebook-list").addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-status]");
-  if (button) saveStatus(button.dataset.id, button.dataset.status);
+  const statusButton = event.target.closest("button[data-status]");
+  if (statusButton) { saveRecord(statusButton.dataset.id, { status: statusButton.dataset.status }); return; }
+  const editButton = event.target.closest("button[data-edit]");
+  if (editButton) openEditor(editButton.dataset.edit);
+});
+$("edit-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (event.submitter?.value === "cancel") { $("edit-dialog").close(); editingId = null; return; }
+  const session = $("edit-session").value.trim();
+  if (!session || session.length > 120 || !editingId) return;
+  const row = state.notebook.find((item) => item.id === editingId);
+  if (!row) return;
+  const sports = [...$("edit-form").querySelectorAll('input[name="sport"]:checked')].map((input) => input.value).filter((value) => SPORTS.includes(value));
+  const changes = { session, sports };
+  if (/^rest\b/i.test(String(row.session || "").trim()) && !/^rest\b/i.test(session) && row.status === "done") changes.status = "planned";
+  $("save-edit-button").disabled = true;
+  const saved = await saveRecord(editingId, changes);
+  $("save-edit-button").disabled = false;
+  if (saved) { $("edit-dialog").close(); editingId = null; }
 });
 $("settings-button").addEventListener("click", () => $("settings-dialog").showModal());
 $("connect-button").addEventListener("click", async () => {
@@ -189,10 +225,10 @@ $("load-files-button").addEventListener("click", async () => {
     if (!validNotebook(notebook) || !validDivisions(divisions)) throw new Error("Os arquivos JSON não têm o formato esperado.");
     const local = JSON.parse(localStorage.getItem("olympia-local-notebook") || "null");
     const marks = new Map((validNotebook(local) ? local : []).filter((r) => r.updatedAt).map((r) => [r.id, r]));
-    state.notebook = notebook.map((r) => marks.has(r.id) ? { ...r, status: marks.get(r.id).status, updatedAt: marks.get(r.id).updatedAt } : r);
+    state.notebook = notebook.map((r) => marks.has(r.id) ? { ...r, status: marks.get(r.id).status, session: marks.get(r.id).session, sports: marks.get(r.id).sports, updatedAt: marks.get(r.id).updatedAt } : r);
     state.divisions = divisions; state.mode = "local";
     sessionStorage.removeItem("olympia-token");
-    render(); notice("Arquivos abertos. Marcações salvas apenas neste navegador."); $("settings-dialog").close();
+    render(); notice("Arquivos abertos. Alterações salvas apenas neste navegador."); $("settings-dialog").close();
   } catch (error) { notice(error.message, true); }
 });
 
