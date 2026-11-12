@@ -145,7 +145,7 @@ function renderNotebook() {
     const rest = /^rest\b/i.test(String(r.session ?? "").trim());
     const sports = Array.isArray(r.sports) ? r.sports.filter((sport) => SPORTS.includes(sport)) : [];
     const activity = (name) => `<button class="entry-title activity-name" type="button" data-edit="${escapeHtml(r.id)}" aria-label="Editar atividades de ${escapeHtml(date)}" ${state.busy ? "disabled" : ""}>${escapeHtml(name)} <span class="activity-pencil" aria-hidden="true">✎</span></button>`;
-    return `<article class="entry"><div class="entry-date">${escapeHtml(weekday)}<small>${escapeHtml(date)}</small></div><div class="entry-main"><div class="activity-list">${activity(rest ? "Sem musculação" : r.session || "Treino")}${sports.map(activity).join("")}</div><div class="entry-hint">Clique em uma atividade para editar o dia</div><p>${escapeHtml(rest ? "Descanso" : status)}${note ? ` · ${escapeHtml(note)}` : ""}</p></div><div class="entry-actions">${rest ? "<span class=\"chip\">Descanso</span>" : `<button class="status-button done ${r.status === "done" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="done" ${state.busy ? "disabled" : ""}>✓ Fiz</button><button class="status-button skipped ${r.status === "skipped" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="skipped" ${state.busy ? "disabled" : ""}>× Não fiz</button>`}</div></article>`;
+    return `<article class="entry ${r.date === todayKey ? "today" : ""}"><div class="entry-date">${escapeHtml(weekday)}<small>${escapeHtml(date)}</small></div><div class="entry-main"><div class="activity-list">${activity(rest ? "Sem musculação" : r.session || "Treino")}${sports.map(activity).join("")}</div><div class="entry-hint">Clique em uma atividade para editar o dia</div><p>${escapeHtml(rest ? "Descanso" : status)}${note ? ` · ${escapeHtml(note)}` : ""}</p></div><div class="entry-actions">${rest ? "<span class=\"chip\">Descanso</span>" : `<button class="status-button done ${r.status === "done" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="done" ${state.busy ? "disabled" : ""}>✓ Fiz</button><button class="status-button skipped ${r.status === "skipped" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="skipped" ${state.busy ? "disabled" : ""}>× Não fiz</button>`}</div></article>`;
   }).join("") : `<div class="empty">${state.mode === "none" ? "Conecte seus dados para ver o Notebook." : "Nenhum registro neste filtro."}</div>`;
 }
 
@@ -188,7 +188,8 @@ function activateTab(name) {
   }
 }
 
-const todayParts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).formatToParts(new Date()).map((part) => [part.type, part.value]));
+const todayParts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).map((part) => [part.type, part.value]));
+const todayKey = `${todayParts.year}-${todayParts.month}-${todayParts.day}`;
 $("month-filter").value = `${todayParts.year}-${todayParts.month}`;
 $("month-filter").addEventListener("input", renderNotebook);
 $("search-filter").addEventListener("input", renderNotebook);
