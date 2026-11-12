@@ -111,9 +111,17 @@ function openEditor(id) {
   if (!row || state.busy) return;
   editingId = id;
   $("edit-date").textContent = new Date(`${row.date}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  $("edit-session").value = row.session || "";
-  const options = [...new Set(state.notebook.map((item) => String(item.session || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
-  $("session-options").innerHTML = options.map((option) => `<option value="${escapeHtml(option)}"></option>`).join("");
+  const current = String(row.session || "").trim();
+  const match = current.toUpperCase().match(/\b(ARMS|DELTS|BACK|CHEST|LEG|REST)$/);
+  const selected = match ? match[1] : current;
+  const select = $("edit-session");
+  select.querySelector('option[data-current="true"]')?.remove();
+  if (selected && !["ARMS", "DELTS", "BACK", "CHEST", "LEG", "REST"].includes(selected)) {
+    const option = new Option(`${current} (registro atual)`, current);
+    option.dataset.current = "true";
+    select.prepend(option);
+  }
+  select.value = selected || "REST";
   for (const checkbox of $("edit-form").querySelectorAll('input[name="sport"]')) checkbox.checked = Array.isArray(row.sports) && row.sports.includes(checkbox.value);
   $("edit-dialog").showModal();
   $("edit-session").focus();
