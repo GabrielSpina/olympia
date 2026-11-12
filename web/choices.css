@@ -4,4 +4,5 @@
 .activity-list .activity-name:hover,.activity-list .activity-name:focus-visible{border-color:#b2ec63;color:#f5ffe8;text-decoration:none;background:#2c4a40}
 .activity-list .activity-name:disabled{opacity:.6;cursor:wait}
 .activity-pencil{color:#b2ec63;font-size:13px;font-weight:600}
+.entry.today{border-color:#a9e967;box-shadow:0 0 0 1px #b2ec6370,0 0 22px #b2ec6340,inset 0 0 18px #b2ec6312}
 
