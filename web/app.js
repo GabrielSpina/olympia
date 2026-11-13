@@ -7,9 +7,32 @@ const $ = (id) => document.getElementById(id);
 const state = { notebook: [], divisions: [], food: { days: [] }, mode: "none", busy: false };
 const SPORTS = ["Jiu-jitsu", "Judô", "Wrestling", "Sambo"];
 let editingId = null;
+let editingExercises = [];
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+
+function extraExercises(value) {
+  const items = Array.isArray(value) ? value : typeof value === "string" ? value.split(/\r?\n/) : [];
+  return items.filter((item) => typeof item === "string").map((item) => item.trim()).filter(Boolean);
+}
+
+function renderEditingExercises() {
+  $("edit-exercise-tags").innerHTML = editingExercises.map((name, index) => `<button class="entry-title activity-name" type="button" data-remove-exercise="${index}" aria-label="Remover ${escapeHtml(name)}">${escapeHtml(name)} <span class="activity-pencil" aria-hidden="true">×</span></button>`).join("");
+}
+
+function addEditingExercise() {
+  const input = $("edit-exercise-input");
+  const name = input.value.trim().replace(/\s+/g, " ");
+  if (!name) return true;
+  if (editingExercises.length >= 20) { $("exercise-message").textContent = "Limite de 20 exercícios extras por dia."; return false; }
+  if (editingExercises.some((item) => item.toLocaleLowerCase("pt-BR") === name.toLocaleLowerCase("pt-BR"))) { $("exercise-message").textContent = "Este exercício já está na lista."; return false; }
+  editingExercises.push(name);
+  input.value = "";
+  $("exercise-message").textContent = "Adicione até 20 exercícios, um de cada vez. Toque em × para remover.";
+  renderEditingExercises();
+  return true;
 }
 
 function notice(message, error = false) {
@@ -128,7 +151,10 @@ function openEditor(id) {
   }
   select.value = selected || "REST";
   for (const checkbox of $("edit-form").querySelectorAll('input[name="sport"]')) checkbox.checked = Array.isArray(row.sports) && row.sports.includes(checkbox.value);
-  $("edit-exercises").value = typeof row.extraExercises === "string" ? row.extraExercises : "";
+  editingExercises = extraExercises(row.extraExercises);
+  $("edit-exercise-input").value = "";
+  $("exercise-message").textContent = "Adicione até 20 exercícios, um de cada vez. Toque em × para remover.";
+  renderEditingExercises();
   $("edit-dialog").showModal();
   $("edit-session").focus();
 }
@@ -136,7 +162,7 @@ function openEditor(id) {
 function renderNotebook() {
   const month = $("month-filter").value;
   const query = $("search-filter").value.trim().toLocaleLowerCase("pt-BR");
-  const rows = state.notebook.filter((r) => (!month || r.date.startsWith(month)) && (!query || `${r.session ?? ""} ${r.notes ?? ""} ${r.extraExercises ?? ""} ${(r.sports || []).join(" ")}`.toLocaleLowerCase("pt-BR").includes(query))).sort((a, b) => b.date.localeCompare(a.date) || b.sourceRow - a.sourceRow);
+  const rows = state.notebook.filter((r) => (!month || r.date.startsWith(month)) && (!query || `${r.session ?? ""} ${r.notes ?? ""} ${extraExercises(r.extraExercises).join(" ")} ${(r.sports || []).join(" ")}`.toLocaleLowerCase("pt-BR").includes(query))).sort((a, b) => b.date.localeCompare(a.date) || b.sourceRow - a.sourceRow);
   const workouts = rows.filter((r) => !/^rest\b/i.test(String(r.session ?? "").trim()));
   const done = workouts.filter((r) => r.status === "done").length;
   const skipped = workouts.filter((r) => r.status === "skipped").length;
@@ -150,9 +176,9 @@ function renderNotebook() {
     const status = r.status === "done" ? "Feito" : r.status === "skipped" ? "Não feito" : "Sem marcação";
     const rest = /^rest\b/i.test(String(r.session ?? "").trim());
     const sports = Array.isArray(r.sports) ? r.sports.filter((sport) => SPORTS.includes(sport)) : [];
-    const extraExercises = typeof r.extraExercises === "string" ? r.extraExercises.trim() : "";
+    const extras = extraExercises(r.extraExercises);
     const activity = (name) => `<button class="entry-title activity-name" type="button" data-edit="${escapeHtml(r.id)}" aria-label="Editar atividades de ${escapeHtml(date)}" ${state.busy ? "disabled" : ""}>${escapeHtml(name)} <span class="activity-pencil" aria-hidden="true">✎</span></button>`;
-    return `<article class="entry ${r.date === todayKey ? "today" : ""}"><div class="entry-date">${escapeHtml(weekday)}<small>${escapeHtml(date)}</small></div><div class="entry-main"><div class="activity-list">${activity(rest ? "REST" : r.session || "Treino")}${sports.map(activity).join("")}</div><div class="entry-hint">Clique em uma atividade para editar o dia</div><p>${escapeHtml(rest ? "Descanso" : status)}${note ? ` · ${escapeHtml(note)}` : ""}</p>${extraExercises ? `<div class="entry-extras"><span>Exercícios extras</span><p>${escapeHtml(extraExercises)}</p></div>` : ""}</div><div class="entry-actions">${rest ? "<span class=\"chip\">Descanso</span>" : `<button class="status-button done ${r.status === "done" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="done" ${state.busy ? "disabled" : ""}>✓ Fiz</button><button class="status-button skipped ${r.status === "skipped" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="skipped" ${state.busy ? "disabled" : ""}>× Não fiz</button>`}</div></article>`;
+    return `<article class="entry ${r.date === todayKey ? "today" : ""}" ${r.date === todayKey ? 'tabindex="-1"' : ""}><div class="entry-date">${escapeHtml(weekday)}<small>${escapeHtml(date)}</small></div><div class="entry-main"><div class="activity-list">${activity(rest ? "REST" : r.session || "Treino")}${sports.map(activity).join("")}${extras.map(activity).join("")}</div><div class="entry-hint">Clique em uma atividade para editar o dia</div><p>${escapeHtml(rest ? "Descanso" : status)}${note ? ` · ${escapeHtml(note)}` : ""}</p></div><div class="entry-actions">${rest ? "<span class=\"chip\">Descanso</span>" : `<button class="status-button done ${r.status === "done" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="done" ${state.busy ? "disabled" : ""}>✓ Fiz</button><button class="status-button skipped ${r.status === "skipped" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="skipped" ${state.busy ? "disabled" : ""}>× Não fiz</button>`}</div></article>`;
   }).join("") : `<div class="empty">${state.mode === "none" ? "Conecte seus dados para ver o Notebook." : "Nenhum registro neste filtro."}</div>`;
 }
 
@@ -235,6 +261,15 @@ $("month-filter").value = `${todayParts.year}-${todayParts.month}`;
 $("food-date").value = todayKey;
 $("month-filter").addEventListener("input", renderNotebook);
 $("search-filter").addEventListener("input", renderNotebook);
+$("today-button").addEventListener("click", () => {
+  $("month-filter").value = todayKey.slice(0, 7);
+  $("search-filter").value = "";
+  renderNotebook();
+  const card = $("notebook-list").querySelector(".entry.today");
+  if (!card) { notice("Ainda não há registro para hoje no Notebook.", true); return; }
+  card.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+  card.focus({ preventScroll: true });
+});
 $("division-filter").addEventListener("change", renderTreinos);
 $("food-date").addEventListener("change", renderFood);
 $("tab-notebook").addEventListener("click", () => activateTab("notebook"));
@@ -246,16 +281,26 @@ $("notebook-list").addEventListener("click", (event) => {
   const editButton = event.target.closest("button[data-edit]");
   if (editButton) openEditor(editButton.dataset.edit);
 });
+$("add-exercise-button").addEventListener("click", () => { if (addEditingExercise()) $("edit-exercise-input").focus(); });
+$("edit-exercise-input").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") { event.preventDefault(); if (addEditingExercise()) $("edit-exercise-input").focus(); }
+});
+$("edit-exercise-tags").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-remove-exercise]");
+  if (!button) return;
+  editingExercises.splice(Number(button.dataset.removeExercise), 1);
+  renderEditingExercises();
+  $("edit-exercise-input").focus();
+});
 $("edit-form").addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (!addEditingExercise()) return;
   const session = $("edit-session").value.trim();
   if (!session || session.length > 120 || !editingId) return;
   const row = state.notebook.find((item) => item.id === editingId);
   if (!row) return;
   const sports = [...$("edit-form").querySelectorAll('input[name="sport"]:checked')].map((input) => input.value).filter((value) => SPORTS.includes(value));
-  const extraExercises = $("edit-exercises").value.trim();
-  if (extraExercises.length > 500) return;
-  const changes = { session, sports, extraExercises };
+  const changes = { session, sports, extraExercises: [...editingExercises] };
   if (/^rest\b/i.test(String(row.session || "").trim()) && !/^rest\b/i.test(session) && row.status === "done") changes.status = "planned";
   $("save-edit-button").disabled = true;
   const saved = await saveRecord(editingId, changes);
@@ -264,7 +309,7 @@ $("edit-form").addEventListener("submit", async (event) => {
 });
 $("close-edit-button").addEventListener("click", () => $("edit-dialog").close());
 $("cancel-edit-button").addEventListener("click", () => $("edit-dialog").close());
-$("edit-dialog").addEventListener("close", () => { editingId = null; });
+$("edit-dialog").addEventListener("close", () => { editingId = null; editingExercises = []; });
 $("settings-button").addEventListener("click", () => $("settings-dialog").showModal());
 $("connect-button").addEventListener("click", async () => {
   try { await loadGithub($("token-input").value.trim()); $("token-input").value = ""; $("settings-dialog").close(); }

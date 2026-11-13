@@ -15,8 +15,8 @@
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./editor.css">
   <link rel="stylesheet" href="./choices.css?v=18">
-  <link rel="stylesheet" href="./theme.css?v=23">
-  <script src="./app.js?v=23" defer></script>
+  <link rel="stylesheet" href="./theme.css?v=24">
+  <script src="./app.js?v=24" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -40,7 +40,7 @@
       <div id="notice" class="notice" role="status"></div>
 
       <section id="notebook-panel" aria-labelledby="tab-notebook">
-        <div class="section-heading"><div><p class="eyebrow">ACOMPANHAMENTO</p><h2>Notebook</h2></div><div class="filters"><label>Mês <input id="month-filter" type="month"></label><label>Buscar <input id="search-filter" type="search" placeholder="Treino ou anotação"></label></div></div>
+        <div class="section-heading"><div><p class="eyebrow">ACOMPANHAMENTO</p><h2>Notebook</h2></div><div class="notebook-heading-tools"><button id="today-button" type="button" class="secondary-button">Ir para hoje</button><div class="filters"><label>Mês <input id="month-filter" type="month"></label><label>Buscar <input id="search-filter" type="search" placeholder="Treino ou anotação"></label></div></div></div>
         <div id="notebook-summary" class="summary"></div>
         <div id="notebook-list" class="notebook-list"></div>
       </section>
@@ -90,9 +90,10 @@
         <label><input type="checkbox" name="sport" value="Wrestling">Wrestling</label>
         <label><input type="checkbox" name="sport" value="Sambo">Sambo</label>
       </fieldset>
-      <label for="edit-exercises">Exercícios extras</label>
-      <textarea id="edit-exercises" name="extraExercises" rows="3" maxlength="500" placeholder="Ex.: prancha, corrida leve, mobilidade"></textarea>
-      <p class="field-help">Escreva livremente os exercícios feitos ou planejados neste dia.</p>
+      <label for="edit-exercise-input">Exercícios extras</label>
+      <div class="extras-input-row"><input id="edit-exercise-input" type="text" maxlength="80" placeholder="Ex.: prancha, corrida leve, mobilidade"><button id="add-exercise-button" type="button" class="secondary-button">Adicionar</button></div>
+      <div id="edit-exercise-tags" class="activity-list edit-exercise-tags" aria-live="polite"></div>
+      <p id="exercise-message" class="field-help" role="status">Adicione até 20 exercícios, um de cada vez. Toque em × para remover.</p>
       <div class="dialog-actions"><button id="cancel-edit-button" type="button" class="quiet-button">Cancelar</button><button id="save-edit-button" type="submit" class="primary-button">Salvar alterações</button></div>
     </form>
   </dialog>

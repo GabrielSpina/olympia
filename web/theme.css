@@ -28,11 +28,15 @@ label{color:#bdad99}input,select{color:#f5f1e9;background:#171411;border:1px sol
 .entry-date,.entry-main{min-width:0}
 .entry-date{overflow-wrap:anywhere}
 .activity-list .activity-name{max-width:100%;min-width:0;overflow-wrap:anywhere}
-.entry-extras{margin-top:11px;padding:8px 0 0 11px;border-left:2px solid var(--gold)}
-.entry-extras span{display:block;color:var(--gold);font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
-.entry-extras p{margin:5px 0 0;white-space:pre-line;overflow-wrap:anywhere;color:#e1d5c2}
-.settings textarea{display:block;width:100%;min-height:88px;margin-top:7px;padding:10px 11px;resize:vertical;background:#171411;border:1px solid #554532;border-radius:3px;color:#f5f1e9;font:inherit;line-height:1.45}
-.settings textarea:focus{outline:2px solid var(--gold);outline-offset:1px}
+.notebook-heading-tools{display:flex;align-items:end;gap:14px;flex-wrap:wrap}
+#today-button{min-height:41px;padding:9px 16px;white-space:nowrap;border-color:var(--gold);color:#f0d69d}
+#today-button:hover,#today-button:focus-visible{background:#47341b;color:#fff}
+.entry.today:focus{outline:2px solid var(--gold);outline-offset:3px}
+.extras-input-row{display:flex;gap:9px;align-items:stretch}
+.extras-input-row input{flex:1;min-width:0;margin-top:0}
+.extras-input-row button{white-space:nowrap;padding:9px 13px}
+.edit-exercise-tags{margin:11px 0 0}
+.edit-exercise-tags .activity-name{font-size:14px}
 .settings .field-help{margin:8px 0 0;font-size:12px;color:#b5a58d}
 dialog{max-height:calc(100dvh - 24px);overflow:auto}
 @media(max-width:700px){
@@ -42,4 +46,6 @@ dialog{max-height:calc(100dvh - 24px);overflow:auto}
   .entry-main,.entry-actions{grid-column:1;min-width:0}
   .entry-actions{display:flex;flex-wrap:wrap;justify-content:flex-start}
   .entry-actions .status-button{flex:0 1 auto}
+  .notebook-heading-tools{width:100%;align-items:stretch;flex-direction:column}
+  #today-button{align-self:flex-start}
 }
