@@ -2,7 +2,7 @@
 body{background:radial-gradient(ellipse at 78% -8%,#3b211c 0,transparent 37%),linear-gradient(135deg,#111 0,#090909 60%);color:#f5f1e9}
 .shell{max-width:1460px}
 .topbar{height:92px;border-bottom:1px solid #42382b}
-.brand-mark{width:47px;height:47px;border:2px solid var(--gold);color:var(--gold);border-radius:50%;font-family:Impact,'Arial Narrow',sans-serif;font-size:29px;box-shadow:0 0 21px #a55f2538}
+.brand-mark{display:block;flex:none;width:47px;height:47px;object-fit:contain;box-shadow:0 0 21px #a55f2538}
 .brand strong,.hero h1,.section-heading h2,.settings h2,.food-box h3,.day-card h3{font-family:Impact,'Arial Narrow',Haettenschweiler,sans-serif;font-weight:700;letter-spacing:.055em;text-transform:uppercase}
 .brand strong{font-size:24px;line-height:1}.brand small{color:#ad9e83;letter-spacing:.14em;font-size:9px}
 .hero{position:relative;overflow:hidden;min-height:235px;border:1px solid #675032;border-radius:2px;background:linear-gradient(105deg,#14100e 0%,#211513 54%,#4c171b 100%);box-shadow:inset 0 1px #d3aa5b33}
