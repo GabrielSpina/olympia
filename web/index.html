@@ -15,8 +15,8 @@
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./editor.css">
   <link rel="stylesheet" href="./choices.css?v=18">
-  <link rel="stylesheet" href="./theme.css?v=22">
-  <script src="./app.js?v=22" defer></script>
+  <link rel="stylesheet" href="./theme.css?v=23">
+  <script src="./app.js?v=23" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -90,6 +90,9 @@
         <label><input type="checkbox" name="sport" value="Wrestling">Wrestling</label>
         <label><input type="checkbox" name="sport" value="Sambo">Sambo</label>
       </fieldset>
+      <label for="edit-exercises">Exercícios extras</label>
+      <textarea id="edit-exercises" name="extraExercises" rows="3" maxlength="500" placeholder="Ex.: prancha, corrida leve, mobilidade"></textarea>
+      <p class="field-help">Escreva livremente os exercícios feitos ou planejados neste dia.</p>
       <div class="dialog-actions"><button id="cancel-edit-button" type="button" class="quiet-button">Cancelar</button><button id="save-edit-button" type="submit" class="primary-button">Salvar alterações</button></div>
     </form>
   </dialog>

@@ -22,3 +22,24 @@ label{color:#bdad99}input,select{color:#f5f1e9;background:#171411;border:1px sol
 .food-content{display:grid;gap:21px}.food-note{margin:0;color:#bbac94;font-size:13px}.food-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.food-metric,.food-box{background:#171411;border:1px solid #57432e;padding:23px;border-radius:3px}.food-metric{border-top:3px solid var(--gold)}.food-metric:nth-child(2){border-top-color:var(--red)}.metric-top{display:flex;justify-content:space-between;align-items:start;gap:12px}.metric-label{display:block;color:#cda966;font-family:Impact,'Arial Narrow',sans-serif;letter-spacing:.15em;font-size:17px}.metric-top strong{display:block;margin-top:8px;font-family:Impact,'Arial Narrow',sans-serif;font-size:42px;line-height:1;letter-spacing:.03em}.metric-top strong small{font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:400;color:#ae9f8a;letter-spacing:0}.metric-percent{color:#e7c87e;font-family:Impact,'Arial Narrow',sans-serif;font-size:34px}.metric-track{height:14px;background:#33281e;margin:22px 0 13px;overflow:hidden;border:1px solid #6e5638}.metric-track span{display:block;height:100%;background:linear-gradient(90deg,#a77d38,#e5bd6e)}.food-metric:nth-child(2) .metric-track span{background:linear-gradient(90deg,#8a1720,#dc4d4b)}.metric-details{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#bbaa94;font-size:12px}.metric-details b{color:#f5ead5}.food-columns{display:grid;grid-template-columns:1fr 1.25fr;gap:14px}.food-box-head{border-bottom:1px solid #51412e;padding-bottom:14px;margin-bottom:8px}.food-box-head h3{font-size:27px;margin:0}.food-items{list-style:none;margin:0;padding:0}.food-items li{display:flex;justify-content:space-between;gap:15px;padding:13px 0;border-bottom:1px solid #3c3024;font-size:13px}.food-items li:last-child{border-bottom:0}.food-items b{white-space:nowrap;color:#e4c687}.food-items b small{color:#aaa08f;font-weight:400}.food-plan{display:grid;gap:10px;margin-top:17px}.plan-meal{display:grid;grid-template-columns:52px 1fr auto;gap:14px;align-items:start;padding:15px;border:1px solid #4a3928;background:#211913}.plan-meal time{color:#ddb76e;font-family:Impact,'Arial Narrow',sans-serif;font-size:18px}.plan-meal h4{margin:0 0 6px;font-size:15px;color:#f5ebdb}.plan-meal p{margin:0;color:#b8aa96;font-size:12px;line-height:1.5}.plan-meal strong{white-space:nowrap;text-align:right;font-size:13px;color:#e5c989}.plan-meal strong small{display:block;margin-top:5px;font-size:11px;font-weight:400;color:#ae9e88}.plan-note{margin:16px 0 0;color:#a99b86;font-size:12px}
 @media(max-width:750px){.food-metrics,.food-columns{grid-template-columns:1fr}.hero-stat span{font-size:42px}.tabs .tab{font-size:16px;padding:15px 17px}.plan-meal{grid-template-columns:48px 1fr}.plan-meal strong{grid-column:2;text-align:left}}
 @media(max-width:430px){.topbar{height:75px}.brand strong{font-size:20px}.brand small{font-size:8px}.hero{min-height:0}.hero h1{font-size:37px}.section-heading h2{font-size:33px}.metric-top strong{font-size:38px}.food-metric,.food-box{padding:17px}}
+
+/* Notebook: give long weekday names their own space on narrow screens. */
+.entry{grid-template-columns:minmax(165px,190px) minmax(0,1fr) auto}
+.entry-date,.entry-main{min-width:0}
+.entry-date{overflow-wrap:anywhere}
+.activity-list .activity-name{max-width:100%;min-width:0;overflow-wrap:anywhere}
+.entry-extras{margin-top:11px;padding:8px 0 0 11px;border-left:2px solid var(--gold)}
+.entry-extras span{display:block;color:var(--gold);font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+.entry-extras p{margin:5px 0 0;white-space:pre-line;overflow-wrap:anywhere;color:#e1d5c2}
+.settings textarea{display:block;width:100%;min-height:88px;margin-top:7px;padding:10px 11px;resize:vertical;background:#171411;border:1px solid #554532;border-radius:3px;color:#f5f1e9;font:inherit;line-height:1.45}
+.settings textarea:focus{outline:2px solid var(--gold);outline-offset:1px}
+.settings .field-help{margin:8px 0 0;font-size:12px;color:#b5a58d}
+dialog{max-height:calc(100dvh - 24px);overflow:auto}
+@media(max-width:700px){
+  .entry{grid-template-columns:minmax(0,1fr);gap:12px}
+  .entry-date{grid-column:1;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;font-size:25px;line-height:1.1}
+  .entry-date small{display:inline;margin:0;font-size:12px;line-height:1.3}
+  .entry-main,.entry-actions{grid-column:1;min-width:0}
+  .entry-actions{display:flex;flex-wrap:wrap;justify-content:flex-start}
+  .entry-actions .status-button{flex:0 1 auto}
+}

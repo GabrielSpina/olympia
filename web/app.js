@@ -128,6 +128,7 @@ function openEditor(id) {
   }
   select.value = selected || "REST";
   for (const checkbox of $("edit-form").querySelectorAll('input[name="sport"]')) checkbox.checked = Array.isArray(row.sports) && row.sports.includes(checkbox.value);
+  $("edit-exercises").value = typeof row.extraExercises === "string" ? row.extraExercises : "";
   $("edit-dialog").showModal();
   $("edit-session").focus();
 }
@@ -135,7 +136,7 @@ function openEditor(id) {
 function renderNotebook() {
   const month = $("month-filter").value;
   const query = $("search-filter").value.trim().toLocaleLowerCase("pt-BR");
-  const rows = state.notebook.filter((r) => (!month || r.date.startsWith(month)) && (!query || `${r.session ?? ""} ${r.notes ?? ""} ${(r.sports || []).join(" ")}`.toLocaleLowerCase("pt-BR").includes(query))).sort((a, b) => b.date.localeCompare(a.date) || b.sourceRow - a.sourceRow);
+  const rows = state.notebook.filter((r) => (!month || r.date.startsWith(month)) && (!query || `${r.session ?? ""} ${r.notes ?? ""} ${r.extraExercises ?? ""} ${(r.sports || []).join(" ")}`.toLocaleLowerCase("pt-BR").includes(query))).sort((a, b) => b.date.localeCompare(a.date) || b.sourceRow - a.sourceRow);
   const workouts = rows.filter((r) => !/^rest\b/i.test(String(r.session ?? "").trim()));
   const done = workouts.filter((r) => r.status === "done").length;
   const skipped = workouts.filter((r) => r.status === "skipped").length;
@@ -149,8 +150,9 @@ function renderNotebook() {
     const status = r.status === "done" ? "Feito" : r.status === "skipped" ? "Não feito" : "Sem marcação";
     const rest = /^rest\b/i.test(String(r.session ?? "").trim());
     const sports = Array.isArray(r.sports) ? r.sports.filter((sport) => SPORTS.includes(sport)) : [];
+    const extraExercises = typeof r.extraExercises === "string" ? r.extraExercises.trim() : "";
     const activity = (name) => `<button class="entry-title activity-name" type="button" data-edit="${escapeHtml(r.id)}" aria-label="Editar atividades de ${escapeHtml(date)}" ${state.busy ? "disabled" : ""}>${escapeHtml(name)} <span class="activity-pencil" aria-hidden="true">✎</span></button>`;
-    return `<article class="entry ${r.date === todayKey ? "today" : ""}"><div class="entry-date">${escapeHtml(weekday)}<small>${escapeHtml(date)}</small></div><div class="entry-main"><div class="activity-list">${activity(rest ? "REST" : r.session || "Treino")}${sports.map(activity).join("")}</div><div class="entry-hint">Clique em uma atividade para editar o dia</div><p>${escapeHtml(rest ? "Descanso" : status)}${note ? ` · ${escapeHtml(note)}` : ""}</p></div><div class="entry-actions">${rest ? "<span class=\"chip\">Descanso</span>" : `<button class="status-button done ${r.status === "done" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="done" ${state.busy ? "disabled" : ""}>✓ Fiz</button><button class="status-button skipped ${r.status === "skipped" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="skipped" ${state.busy ? "disabled" : ""}>× Não fiz</button>`}</div></article>`;
+    return `<article class="entry ${r.date === todayKey ? "today" : ""}"><div class="entry-date">${escapeHtml(weekday)}<small>${escapeHtml(date)}</small></div><div class="entry-main"><div class="activity-list">${activity(rest ? "REST" : r.session || "Treino")}${sports.map(activity).join("")}</div><div class="entry-hint">Clique em uma atividade para editar o dia</div><p>${escapeHtml(rest ? "Descanso" : status)}${note ? ` · ${escapeHtml(note)}` : ""}</p>${extraExercises ? `<div class="entry-extras"><span>Exercícios extras</span><p>${escapeHtml(extraExercises)}</p></div>` : ""}</div><div class="entry-actions">${rest ? "<span class=\"chip\">Descanso</span>" : `<button class="status-button done ${r.status === "done" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="done" ${state.busy ? "disabled" : ""}>✓ Fiz</button><button class="status-button skipped ${r.status === "skipped" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="skipped" ${state.busy ? "disabled" : ""}>× Não fiz</button>`}</div></article>`;
   }).join("") : `<div class="empty">${state.mode === "none" ? "Conecte seus dados para ver o Notebook." : "Nenhum registro neste filtro."}</div>`;
 }
 
@@ -251,7 +253,9 @@ $("edit-form").addEventListener("submit", async (event) => {
   const row = state.notebook.find((item) => item.id === editingId);
   if (!row) return;
   const sports = [...$("edit-form").querySelectorAll('input[name="sport"]:checked')].map((input) => input.value).filter((value) => SPORTS.includes(value));
-  const changes = { session, sports };
+  const extraExercises = $("edit-exercises").value.trim();
+  if (extraExercises.length > 500) return;
+  const changes = { session, sports, extraExercises };
   if (/^rest\b/i.test(String(row.session || "").trim()) && !/^rest\b/i.test(session) && row.status === "done") changes.status = "planned";
   $("save-edit-button").disabled = true;
   const saved = await saveRecord(editingId, changes);
@@ -282,7 +286,7 @@ $("load-files-button").addEventListener("click", async () => {
     if (!validFood(food)) throw new Error("O arquivo de alimentação não tem o formato esperado.");
     const local = JSON.parse(localStorage.getItem("olympia-local-notebook") || "null");
     const marks = new Map((validNotebook(local) ? local : []).filter((r) => r.updatedAt).map((r) => [r.id, r]));
-    state.notebook = notebook.map((r) => marks.has(r.id) ? { ...r, status: marks.get(r.id).status, session: marks.get(r.id).session, sports: marks.get(r.id).sports, updatedAt: marks.get(r.id).updatedAt } : r);
+    state.notebook = notebook.map((r) => marks.has(r.id) ? { ...r, status: marks.get(r.id).status, session: marks.get(r.id).session, sports: marks.get(r.id).sports, extraExercises: marks.get(r.id).extraExercises, updatedAt: marks.get(r.id).updatedAt } : r);
     state.divisions = divisions; state.food = food; state.mode = "local";
     localStorage.removeItem("olympia-token");
     sessionStorage.removeItem("olympia-token");
