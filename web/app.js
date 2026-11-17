@@ -6,8 +6,17 @@ const API = `https://api.github.com/repos/${OWNER}/${DATA_REPO}/contents/`;
 const $ = (id) => document.getElementById(id);
 const state = { notebook: [], divisions: [], food: { days: [] }, mode: "none", busy: false };
 const SPORTS = ["Jiu-jitsu", "Judô", "Wrestling", "Sambo"];
+const SESSION_COLORS = { ARMS: "🟫", DELTS: "⬜️", BACK: "⬛️", CHEST: "🟪", LEG: "🟦" };
 let editingId = null;
 let editingExercises = [];
+
+function coloredSession(selection, previous) {
+  const current = String(previous || "").trim();
+  const selected = String(selection || "").trim();
+  const currentType = current.toUpperCase().match(/\b(ARMS|DELTS|BACK|CHEST|LEG|REST)$/)?.[1];
+  if (selected === current || selected === currentType) return current;
+  return SESSION_COLORS[selected] ? `${SESSION_COLORS[selected]} ${selected}` : selected;
+}
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -295,10 +304,11 @@ $("edit-exercise-tags").addEventListener("click", (event) => {
 $("edit-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!addEditingExercise()) return;
-  const session = $("edit-session").value.trim();
-  if (!session || session.length > 120 || !editingId) return;
+  const selectedSession = $("edit-session").value.trim();
+  if (!selectedSession || selectedSession.length > 120 || !editingId) return;
   const row = state.notebook.find((item) => item.id === editingId);
   if (!row) return;
+  const session = coloredSession(selectedSession, row.session);
   const sports = [...$("edit-form").querySelectorAll('input[name="sport"]:checked')].map((input) => input.value).filter((value) => SPORTS.includes(value));
   const changes = { session, sports, extraExercises: [...editingExercises] };
   if (/^rest\b/i.test(String(row.session || "").trim()) && !/^rest\b/i.test(session) && row.status === "done") changes.status = "planned";
