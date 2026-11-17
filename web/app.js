@@ -96,6 +96,18 @@ async function loadGithub(token) {
   notice("Conectado ao repositório privado. Suas alterações serão salvas no GitHub.");
 }
 
+async function refreshNotebook() {
+  if (state.mode !== "github" || state.busy) return;
+  const token = localStorage.getItem("olympia-token");
+  if (!token) return;
+  try {
+    const file = await githubFile("notebook.json", token);
+    if (!validNotebook(file.data)) throw new Error("Notebook inválido no repositório privado.");
+    state.notebook = file.data;
+    renderNotebook();
+  } catch (error) { notice(`Não foi possível atualizar o Notebook: ${error.message}`, true); }
+}
+
 async function saveRecord(id, changes) {
   if (state.busy || state.mode === "none") return false;
   state.busy = true;
@@ -181,13 +193,15 @@ function renderNotebook() {
     const dateObject = new Date(`${r.date}T12:00:00`);
     const weekday = dateObject.toLocaleDateString("pt-BR", { weekday: "long" });
     const date = dateObject.toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" });
-    const note = [r.notes, typeof r.weightKg === "number" ? `${r.weightKg} kg` : null].filter(Boolean).join(" · ");
+    const applicationCodes = /^(?:VD|GD|VE|GE|DD|DE)(?:\/(?:VD|GD|VE|GE|DD|DE))*$/.test(String(r.notes || "").trim()) ? String(r.notes).trim().split("/") : [];
+    const applicationTags = applicationCodes.length ? `<div class="application-list"><span class="application-label">Aplicações</span>${applicationCodes.map((code) => `<span class="application-tag">${escapeHtml(code)}</span>`).join("")}</div>` : "";
+    const note = [applicationCodes.length ? null : r.notes, typeof r.weightKg === "number" ? `${r.weightKg} kg` : null].filter(Boolean).join(" · ");
     const status = r.status === "done" ? "Feito" : r.status === "skipped" ? "Não feito" : "Sem marcação";
     const rest = /^rest\b/i.test(String(r.session ?? "").trim());
     const sports = Array.isArray(r.sports) ? r.sports.filter((sport) => SPORTS.includes(sport)) : [];
     const extras = extraExercises(r.extraExercises);
     const activity = (name) => `<button class="entry-title activity-name" type="button" data-edit="${escapeHtml(r.id)}" aria-label="Editar atividades de ${escapeHtml(date)}" ${state.busy ? "disabled" : ""}>${escapeHtml(name)} <span class="activity-pencil" aria-hidden="true">✎</span></button>`;
-    return `<article class="entry ${r.date === todayKey ? "today" : ""}" ${r.date === todayKey ? 'tabindex="-1"' : ""}><div class="entry-date">${escapeHtml(weekday)}<small>${escapeHtml(date)}</small></div><div class="entry-main"><div class="activity-list">${activity(rest ? "REST" : r.session || "Treino")}${sports.map(activity).join("")}${extras.map(activity).join("")}</div><div class="entry-hint">Clique em uma atividade para editar o dia</div><p>${escapeHtml(rest ? "Descanso" : status)}${note ? ` · ${escapeHtml(note)}` : ""}</p></div><div class="entry-actions">${rest ? "<span class=\"chip\">Descanso</span>" : `<button class="status-button done ${r.status === "done" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="done" ${state.busy ? "disabled" : ""}>✓ Fiz</button><button class="status-button skipped ${r.status === "skipped" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="skipped" ${state.busy ? "disabled" : ""}>× Não fiz</button>`}</div></article>`;
+    return `<article class="entry ${r.date === todayKey ? "today" : ""}" ${r.date === todayKey ? 'tabindex="-1"' : ""}><div class="entry-date">${escapeHtml(weekday)}<small>${escapeHtml(date)}</small></div><div class="entry-main"><div class="activity-list">${activity(rest ? "REST" : r.session || "Treino")}${sports.map(activity).join("")}${extras.map(activity).join("")}</div>${applicationTags}<div class="entry-hint">Clique em uma atividade para editar o dia</div><p>${escapeHtml(rest ? "Descanso" : status)}${note ? ` · ${escapeHtml(note)}` : ""}</p></div><div class="entry-actions">${rest ? "<span class=\"chip\">Descanso</span>" : `<button class="status-button done ${r.status === "done" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="done" ${state.busy ? "disabled" : ""}>✓ Fiz</button><button class="status-button skipped ${r.status === "skipped" ? "active" : ""}" data-id="${escapeHtml(r.id)}" data-status="skipped" ${state.busy ? "disabled" : ""}>× Não fiz</button>`}</div></article>`;
   }).join("") : `<div class="empty">${state.mode === "none" ? "Conecte seus dados para ver o Notebook." : "Nenhum registro neste filtro."}</div>`;
 }
 
@@ -262,6 +276,7 @@ function activateTab(name) {
     $(`${tab}-panel`).hidden = !active;
   }
   if (name === "alimentacao") refreshFood();
+  if (name === "notebook") refreshNotebook();
 }
 
 const todayParts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).map((part) => [part.type, part.value]));
@@ -270,7 +285,8 @@ $("month-filter").value = `${todayParts.year}-${todayParts.month}`;
 $("food-date").value = todayKey;
 $("month-filter").addEventListener("input", renderNotebook);
 $("search-filter").addEventListener("input", renderNotebook);
-$("today-button").addEventListener("click", () => {
+$("today-button").addEventListener("click", async () => {
+  await refreshNotebook();
   $("month-filter").value = todayKey.slice(0, 7);
   $("search-filter").value = "";
   renderNotebook();
@@ -278,6 +294,9 @@ $("today-button").addEventListener("click", () => {
   if (!card) { notice("Ainda não há registro para hoje no Notebook.", true); return; }
   card.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
   card.focus({ preventScroll: true });
+});
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && !$("notebook-panel").hidden) refreshNotebook();
 });
 $("division-filter").addEventListener("change", renderTreinos);
 $("food-date").addEventListener("change", renderFood);
@@ -355,3 +374,4 @@ if (savedToken) loadGithub(savedToken).catch((error) => notice(error.message, tr
 else notice("Conecte o repositório privado em Dados para começar.");
 setInterval(refreshFood, 60000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshFood(); });
+
