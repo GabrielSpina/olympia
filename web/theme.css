@@ -49,31 +49,19 @@ dialog{max-height:calc(100dvh - 24px);overflow:auto}
   .notebook-heading-tools{width:100%;align-items:stretch;flex-direction:column}
   #today-button{align-self:flex-start}
 }
-.food-balance-card{margin-top:-9px;padding:16px 19px;background:#171411;border:1px solid #57432e;border-left:3px solid #b78d48;border-radius:3px}
-.balance-heading{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:13px}
-.mini-label{font-family:Impact,'Arial Narrow',sans-serif;color:#cda966;font-size:15px;letter-spacing:.11em}
-.balance-heading small,.food-balance-card p,.balance-status{color:#bbaa94;font-size:11px;line-height:1.4}
-.balance-grid{display:grid;grid-template-columns:1fr;gap:10px}
-.balance-item{min-width:0;padding:12px;background:#241c17;border:1px solid #57432e}
-.balance-item-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
-.balance-item-top span{font-size:12px;font-weight:700;color:#e0c894}
-.balance-item-top strong{font-family:Impact,'Arial Narrow',sans-serif;font-size:25px;line-height:1;color:#f5ead5}
-.balance-item-top strong small{font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:400;color:#bbaa94}
-.balance-track{display:block;width:100%;height:8px;background:#443225;margin:10px 0 7px;overflow:hidden;border:0;appearance:none;accent-color:#c59b55}
-.balance-percent{color:#e7c87e;font-family:Impact,'Arial Narrow',sans-serif;font-size:20px;line-height:1}
-.balance-item.over .balance-percent{color:#f29b8e}
-.balance-item.over .balance-status{color:#f29b8e;font-weight:700}
-.food-balance-card p{margin:13px 0 0}.food-balance-card p b{color:#f5ead5}
+.food-metrics{grid-template-columns:1fr}
+.food-metric:nth-child(3){border-top-color:#b68647}
+.food-metric:nth-child(4){border-top-color:#c26a4d}
+.food-metric:nth-child(5){border-top-color:#d45b55}
+.food-metric.over{border-color:#d45b55}
+.food-metric.over .metric-percent,.food-metric.over .metric-details{color:#f29b8e}
+.food-macro-note{margin:-12px 0 0;color:#bbaa94;font-size:11px;line-height:1.5}
 progress.metric-track{display:block;width:100%;height:14px;background:#33281e;border:1px solid #6e5638;appearance:none;accent-color:#c59b55}
 progress.metric-track::-webkit-progress-bar{background:#33281e}
 progress.metric-track::-webkit-progress-value{background:linear-gradient(90deg,#a77d38,#e5bd6e)}
 progress.metric-track::-moz-progress-bar{background:linear-gradient(90deg,#a77d38,#e5bd6e)}
 .food-metric:nth-child(2) progress.metric-track::-webkit-progress-value{background:linear-gradient(90deg,#8a1720,#dc4d4b)}
 .food-metric:nth-child(2) progress.metric-track::-moz-progress-bar{background:linear-gradient(90deg,#8a1720,#dc4d4b)}
-progress.balance-track::-webkit-progress-bar{background:#443225}
-progress.balance-track::-webkit-progress-value{background:#c59b55}
-progress.balance-track::-moz-progress-bar{background:#c59b55}
-.balance-item.over progress.balance-track::-webkit-progress-value{background:#d45b55}
-.balance-item.over progress.balance-track::-moz-progress-bar{background:#d45b55}
-@media(max-width:550px){.balance-grid{gap:8px}.food-balance-card{padding:13px}.balance-item-top strong{font-size:23px}}
+.food-metric.over progress.metric-track::-webkit-progress-value{background:#d45b55}
+.food-metric.over progress.metric-track::-moz-progress-bar{background:#d45b55}
 
