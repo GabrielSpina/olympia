@@ -242,6 +242,16 @@ function renderFood() {
     return;
   }
   const totals = day.items.reduce((sum, item) => ({ kcal: sum.kcal + (Number(item.kcal) || 0), proteinG: sum.proteinG + (Number(item.proteinG) || 0) }), { kcal: 0, proteinG: 0 });
+  const miniMetric = (label, field) => {
+    const known = day.items.filter((item) => Number.isFinite(item[field]) && item[field] >= 0);
+    const total = known.reduce((sum, item) => sum + item[field], 0);
+    const incomplete = known.length < day.items.length;
+    const target = day.target?.[field];
+    const over = Number.isFinite(target) && target > 0 && total > target;
+    const targetText = Number.isFinite(target) && target > 0 ? over ? `Acima da meta em ${foodNumber(total - target)} g` : `Meta ${foodNumber(target)} g` : "Sem meta individual";
+    const coverage = known.length ? `${known.length}/${day.items.length} itens com dados${incomplete ? " · parcial" : " · estimativa"}` : "Nenhum item com dados";
+    return `<article class="food-mini-metric"><span class="mini-label">${label}</span><strong>${known.length ? `${incomplete ? "≥" : "~"}${foodNumber(total)} g` : "—"}</strong><small>${coverage}</small><span class="mini-target${over ? " over" : ""}">${targetText}</span></article>`;
+  };
   const metric = (label, unit, consumed, target) => {
     const remaining = Math.max(0, target - consumed);
     const percent = target > 0 ? Math.round(consumed / target * 100) : 0;
@@ -251,7 +261,7 @@ function renderFood() {
   };
   const items = day.items.length ? day.items.map((item) => `<li><span>${escapeHtml(item.name)}</span><b>${foodNumber(item.kcal)} kcal <small>· ${foodNumber(item.proteinG)} g prot.</small></b></li>`).join("") : `<li>Nenhuma refeição registrada.</li>`;
   const plan = day.plan.length ? day.plan.map((meal) => `<article class="plan-meal"><time>${escapeHtml(meal.time)}</time><div><h4>${escapeHtml(meal.name)}</h4><p>${escapeHtml(meal.description)}</p></div><strong>~${foodNumber(meal.kcal)} kcal<small>~${foodNumber(meal.proteinG)} g proteína</small></strong></article>`).join("") : `<div class="empty">Sem refeições planejadas para o restante do dia.</div>`;
-  $("food-content").innerHTML = `<p class="food-note">${escapeHtml(day.note || "Valores estimados; porções e marcas podem alterar os totais.")}</p><div class="food-metrics">${metric("CALORIAS", "kcal", totals.kcal, day.target.kcal)}${metric("PROTEÍNA", "g", totals.proteinG, day.target.proteinG)}</div><div class="food-columns"><section class="food-box"><div class="food-box-head"><p class="eyebrow">CONSUMIDO</p><h3>Registro do dia</h3></div><ul class="food-items">${items}</ul></section><section class="food-box"><div class="food-box-head"><p class="eyebrow">PRÓXIMAS REFEIÇÕES</p><h3>Resto do dia</h3></div><div class="food-plan">${plan}</div><p class="plan-note">Sugestões planejadas. Elas só entram no total quando forem registradas.</p></section></div>`;
+  $("food-content").innerHTML = `<p class="food-note">${escapeHtml(day.note || "Valores estimados; porções e marcas podem alterar os totais.")}</p><div class="food-metrics">${metric("CALORIAS", "kcal", totals.kcal, day.target.kcal)}${metric("PROTEÍNA", "g", totals.proteinG, day.target.proteinG)}</div><div class="food-mini-metrics">${miniMetric("AÇÚCARES TOTAIS", "sugarG")}${miniMetric("GORDURA TOTAL", "fatG")}</div><p class="food-mini-note">Açúcares totais incluem os naturalmente presentes nos alimentos. Valores incompletos aparecem como parciais.</p><div class="food-columns"><section class="food-box"><div class="food-box-head"><p class="eyebrow">CONSUMIDO</p><h3>Registro do dia</h3></div><ul class="food-items">${items}</ul></section><section class="food-box"><div class="food-box-head"><p class="eyebrow">PRÓXIMAS REFEIÇÕES</p><h3>Resto do dia</h3></div><div class="food-plan">${plan}</div><p class="plan-note">Sugestões planejadas. Elas só entram no total quando forem registradas.</p></section></div>`;
 }
 
 async function refreshFood() {
