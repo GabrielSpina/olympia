@@ -64,8 +64,13 @@ progress.metric-track::-moz-progress-bar{background:linear-gradient(90deg,#a77d3
 .food-metric:nth-child(2) progress.metric-track::-moz-progress-bar{background:linear-gradient(90deg,#8a1720,#dc4d4b)}
 .food-metric.over progress.metric-track::-webkit-progress-value{background:#d45b55}
 .food-metric.over progress.metric-track::-moz-progress-bar{background:#d45b55}
-.metric-remaining{margin-top:15px;color:#f0d49a;font-size:13px;font-weight:700}
+.metric-top{align-items:flex-start}
+.metric-values{display:flex;justify-content:space-between;align-items:baseline;gap:8px 18px;flex-wrap:wrap;margin-top:9px}
+.metric-values strong{font-family:Impact,'Arial Narrow',sans-serif;font-size:42px;line-height:1;letter-spacing:.03em}
+.metric-values strong small{font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:400;color:#ae9f8a;letter-spacing:0}
+.metric-remaining{color:#f0d49a;font-size:13px;font-weight:700;text-align:right}
 .food-metric.over .metric-remaining{color:#f29b8e}
 .food-metric progress.metric-track{margin:8px 0 0}
 .metric-extra{margin-top:8px;color:#bbaa94;font-size:11px;line-height:1.4}
+@media(max-width:550px){.metric-values{flex-wrap:nowrap;gap:8px}.metric-values strong{min-width:0;font-size:clamp(26px,7vw,34px)}.metric-values strong small{font-size:12px}.metric-remaining{flex-shrink:0;font-size:11px}}
 
