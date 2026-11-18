@@ -49,13 +49,20 @@ dialog{max-height:calc(100dvh - 24px);overflow:auto}
   .notebook-heading-tools{width:100%;align-items:stretch;flex-direction:column}
   #today-button{align-self:flex-start}
 }
-.food-mini-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:-9px}
-.food-mini-metric{display:grid;gap:4px;min-width:0;padding:15px 18px;background:#171411;border:1px solid #57432e;border-left:3px solid #b78d48;border-radius:3px}
-.food-mini-metric:nth-child(2){border-left-color:#a14d47}
-.mini-label{font-family:Impact,'Arial Narrow',sans-serif;color:#cda966;font-size:14px;letter-spacing:.11em}
-.food-mini-metric strong{font-family:Impact,'Arial Narrow',sans-serif;color:#f5ead5;font-size:29px;line-height:1.1}
-.food-mini-metric small,.mini-target,.food-mini-note{color:#bbaa94;font-size:11px;line-height:1.4}
-.mini-target.over{color:#f29b8e;font-weight:700}
-.food-mini-note{margin:-14px 0 0}
-@media(max-width:430px){.food-mini-metrics{gap:8px}.food-mini-metric{padding:12px}.food-mini-metric strong{font-size:24px}.mini-label{font-size:12px}}
+.food-balance-card{margin-top:-9px;padding:16px 19px;background:#171411;border:1px solid #57432e;border-left:3px solid #b78d48;border-radius:3px}
+.balance-heading{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:13px}
+.mini-label{font-family:Impact,'Arial Narrow',sans-serif;color:#cda966;font-size:15px;letter-spacing:.11em}
+.balance-heading small,.food-balance-card p,.balance-status{color:#bbaa94;font-size:11px;line-height:1.4}
+.balance-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.balance-item{min-width:0;padding:12px;background:#241c17;border:1px solid #57432e}
+.balance-item-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.balance-item-top span{font-size:12px;font-weight:700;color:#e0c894}
+.balance-item-top strong{font-family:Impact,'Arial Narrow',sans-serif;font-size:25px;line-height:1;color:#f5ead5}
+.balance-item-top strong small{font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:400;color:#bbaa94}
+.balance-track{height:7px;background:#443225;margin:10px 0 7px;overflow:hidden}
+.balance-track span{display:block;height:100%;background:#c59b55}
+.balance-item.over .balance-track span{background:#d45b55}
+.balance-item.over .balance-status{color:#f29b8e;font-weight:700}
+.food-balance-card p{margin:13px 0 0}.food-balance-card p b{color:#f5ead5}
+@media(max-width:550px){.balance-grid{grid-template-columns:1fr;gap:8px}.food-balance-card{padding:13px}.balance-item-top strong{font-size:23px}}
 
