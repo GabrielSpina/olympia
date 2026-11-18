@@ -6,6 +6,8 @@ const API = `https://api.github.com/repos/${OWNER}/${DATA_REPO}/contents/`;
 const $ = (id) => document.getElementById(id);
 const state = { notebook: [], divisions: [], food: { days: [] }, mode: "none", busy: false };
 const SPORTS = ["Jiu-jitsu", "Judô", "Wrestling", "Sambo"];
+const APPLICATIONS = ["VD", "GD", "DD", "VE", "GE", "DE"];
+const APPLICATION_NOTE_PATTERN = /^(?:VD|GD|DD|VE|GE|DE)(?:\/(?:VD|GD|DD|VE|GE|DE))*$/;
 const SESSION_COLORS = { ARMS: "🟫", DELTS: "⬜️", BACK: "⬛️", CHEST: "🟪", LEG: "🟦" };
 let editingId = null;
 let editingExercises = [];
@@ -25,6 +27,13 @@ function escapeHtml(value) {
 function extraExercises(value) {
   const items = Array.isArray(value) ? value : typeof value === "string" ? value.split(/\r?\n/) : [];
   return items.filter((item) => typeof item === "string").map((item) => item.trim()).filter(Boolean);
+}
+
+function applicationCodes(row) {
+  const fromNotes = String(row.notes || "").trim();
+  const legacy = APPLICATION_NOTE_PATTERN.test(fromNotes) ? fromNotes.split("/") : [];
+  const saved = Array.isArray(row.applications) ? row.applications : [];
+  return APPLICATIONS.filter((code) => legacy.includes(code) || saved.includes(code));
 }
 
 function renderEditingExercises() {
@@ -47,6 +56,14 @@ function addEditingExercise() {
 function notice(message, error = false) {
   $("notice").textContent = message;
   $("notice").classList.toggle("error", error);
+}
+
+function applyNotebookChanges(row, changes) {
+  const currentNotes = String(row.notes || "").trim();
+  Object.assign(row, changes);
+  if (Object.hasOwn(changes, "applications") && (!currentNotes || APPLICATION_NOTE_PATTERN.test(currentNotes))) {
+    row.notes = changes.applications.length ? changes.applications.join("/") : null;
+  }
 }
 
 function validNotebook(rows) {
@@ -134,7 +151,7 @@ async function saveRecord(id, changes) {
         if (!validNotebook(file.data)) throw new Error("Notebook inválido no repositório privado.");
         const row = file.data.find((item) => item.id === id);
         if (!row) throw new Error("Este registro não existe mais no Notebook.");
-        Object.assign(row, changes);
+        applyNotebookChanges(row, changes);
         row.updatedAt = new Date().toISOString();
         const response = await fetch(API + "notebook.json", {
           method: "PUT",
@@ -152,7 +169,7 @@ async function saveRecord(id, changes) {
     } else if (state.mode === "local") {
       const row = state.notebook.find((item) => item.id === id);
       if (!row) throw new Error("Registro não encontrado.");
-      Object.assign(row, changes);
+      applyNotebookChanges(row, changes);
       row.updatedAt = new Date().toISOString();
       localStorage.setItem("olympia-local-notebook", JSON.stringify(state.notebook));
       notice("Alteração salva neste navegador. Conecte o GitHub para guardar no repositório privado.");
@@ -184,6 +201,7 @@ function openEditor(id) {
   }
   select.value = selected || "REST";
   for (const checkbox of $("edit-form").querySelectorAll('input[name="sport"]')) checkbox.checked = Array.isArray(row.sports) && row.sports.includes(checkbox.value);
+  for (const checkbox of $("edit-form").querySelectorAll('input[name="application"]')) checkbox.checked = applicationCodes(row).includes(checkbox.value);
   editingExercises = extraExercises(row.extraExercises);
   $("edit-exercise-input").value = "";
   $("exercise-message").textContent = "Adicione até 20 exercícios, um de cada vez. Toque em × para remover.";
@@ -195,7 +213,7 @@ function openEditor(id) {
 function renderNotebook() {
   const month = $("month-filter").value;
   const query = $("search-filter").value.trim().toLocaleLowerCase("pt-BR");
-  const rows = state.notebook.filter((r) => (!month || r.date.startsWith(month)) && (!query || `${r.session ?? ""} ${r.notes ?? ""} ${extraExercises(r.extraExercises).join(" ")} ${(r.sports || []).join(" ")}`.toLocaleLowerCase("pt-BR").includes(query))).sort((a, b) => b.date.localeCompare(a.date) || b.sourceRow - a.sourceRow);
+  const rows = state.notebook.filter((r) => (!month || r.date.startsWith(month)) && (!query || `${r.session ?? ""} ${r.notes ?? ""} ${applicationCodes(r).join(" ")} ${extraExercises(r.extraExercises).join(" ")} ${(r.sports || []).join(" ")}`.toLocaleLowerCase("pt-BR").includes(query))).sort((a, b) => b.date.localeCompare(a.date) || b.sourceRow - a.sourceRow);
   const workouts = rows.filter((r) => !/^rest\b/i.test(String(r.session ?? "").trim()));
   const done = workouts.filter((r) => r.status === "done").length;
   const skipped = workouts.filter((r) => r.status === "skipped").length;
@@ -205,9 +223,9 @@ function renderNotebook() {
     const dateObject = new Date(`${r.date}T12:00:00`);
     const weekday = dateObject.toLocaleDateString("pt-BR", { weekday: "long" });
     const date = dateObject.toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" });
-    const applicationCodes = /^(?:VD|GD|VE|GE|DD|DE)(?:\/(?:VD|GD|VE|GE|DD|DE))*$/.test(String(r.notes || "").trim()) ? String(r.notes).trim().split("/") : [];
-    const applicationTags = applicationCodes.length ? `<div class="application-list"><span class="application-label">Aplicações</span>${applicationCodes.map((code) => `<span class="application-tag">${escapeHtml(code)}</span>`).join("")}</div>` : "";
-    const note = [applicationCodes.length ? null : r.notes, typeof r.weightKg === "number" ? `${r.weightKg} kg` : null].filter(Boolean).join(" · ");
+    const applications = applicationCodes(r);
+    const applicationTags = applications.length ? `<div class="application-list"><span class="application-label">Aplicações</span>${applications.map((code) => `<span class="application-tag">${escapeHtml(code)}</span>`).join("")}</div>` : "";
+    const note = [APPLICATION_NOTE_PATTERN.test(String(r.notes || "").trim()) ? null : r.notes, typeof r.weightKg === "number" ? `${r.weightKg} kg` : null].filter(Boolean).join(" · ");
     const status = r.status === "done" ? "Feito" : r.status === "skipped" ? "Não feito" : "Sem marcação";
     const rest = /^rest\b/i.test(String(r.session ?? "").trim());
     const sports = Array.isArray(r.sports) ? r.sports.filter((sport) => SPORTS.includes(sport)) : [];
@@ -365,7 +383,8 @@ $("edit-form").addEventListener("submit", async (event) => {
   if (!row) return;
   const session = coloredSession(selectedSession, row.session);
   const sports = [...$("edit-form").querySelectorAll('input[name="sport"]:checked')].map((input) => input.value).filter((value) => SPORTS.includes(value));
-  const changes = { session, sports, extraExercises: [...editingExercises] };
+  const applications = [...$("edit-form").querySelectorAll('input[name="application"]:checked')].map((input) => input.value).filter((value) => APPLICATIONS.includes(value));
+  const changes = { session, sports, extraExercises: [...editingExercises], applications };
   if (/^rest\b/i.test(String(row.session || "").trim()) && !/^rest\b/i.test(session) && row.status === "done") changes.status = "planned";
   $("save-edit-button").disabled = true;
   const saved = await saveRecord(editingId, changes);
@@ -396,7 +415,7 @@ $("load-files-button").addEventListener("click", async () => {
     if (!validFood(food)) throw new Error("O arquivo de alimentação não tem o formato esperado.");
     const local = JSON.parse(localStorage.getItem("olympia-local-notebook") || "null");
     const marks = new Map((validNotebook(local) ? local : []).filter((r) => r.updatedAt).map((r) => [r.id, r]));
-    state.notebook = notebook.map((r) => marks.has(r.id) ? { ...r, status: marks.get(r.id).status, session: marks.get(r.id).session, sports: marks.get(r.id).sports, extraExercises: marks.get(r.id).extraExercises, updatedAt: marks.get(r.id).updatedAt } : r);
+    state.notebook = notebook.map((r) => marks.has(r.id) ? { ...r, status: marks.get(r.id).status, session: marks.get(r.id).session, sports: marks.get(r.id).sports, applications: marks.get(r.id).applications, notes: marks.get(r.id).notes, extraExercises: marks.get(r.id).extraExercises, updatedAt: marks.get(r.id).updatedAt } : r);
     state.divisions = divisions; state.food = food; state.mode = "local";
     localStorage.removeItem("olympia-token");
     sessionStorage.removeItem("olympia-token");

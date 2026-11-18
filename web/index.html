@@ -15,8 +15,8 @@
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./editor.css">
   <link rel="stylesheet" href="./choices.css?v=19">
-  <link rel="stylesheet" href="./theme.css?v=32">
-  <script src="./app.js?v=33" defer></script>
+  <link rel="stylesheet" href="./theme.css?v=33">
+  <script src="./app.js?v=34" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -89,6 +89,16 @@
         <label><input type="checkbox" name="sport" value="Judô">Judô</label>
         <label><input type="checkbox" name="sport" value="Wrestling">Wrestling</label>
         <label><input type="checkbox" name="sport" value="Sambo">Sambo</label>
+      </fieldset>
+      <fieldset class="sports-fieldset application-fieldset"><legend>Pontos de aplicação neste dia</legend>
+        <div class="application-options">
+          <label><input type="checkbox" name="application" value="VD">VD</label>
+          <label><input type="checkbox" name="application" value="GD">GD</label>
+          <label><input type="checkbox" name="application" value="DD">DD</label>
+          <label><input type="checkbox" name="application" value="VE">VE</label>
+          <label><input type="checkbox" name="application" value="GE">GE</label>
+          <label><input type="checkbox" name="application" value="DE">DE</label>
+        </div>
       </fieldset>
       <label for="edit-exercise-input">Exercícios extras</label>
       <div class="extras-input-row"><input id="edit-exercise-input" type="text" maxlength="80" placeholder="Ex.: prancha, corrida leve, mobilidade"><button id="add-exercise-button" type="button" class="secondary-button">Adicionar</button></div>
