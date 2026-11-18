@@ -93,7 +93,7 @@ async function loadGithub(token) {
   state.mode = "github";
   localStorage.setItem("olympia-token", token);
   render();
-  notice("Conectado ao repositório privado. Suas alterações serão salvas no GitHub.");
+  notice("");
 }
 
 async function refreshNotebook() {
@@ -410,4 +410,3 @@ if (savedToken) loadGithub(savedToken).catch((error) => notice(error.message, tr
 else notice("Conecte o repositório privado em Dados para começar.");
 setInterval(refreshFood, 60000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshFood(); });
-
