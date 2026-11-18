@@ -249,27 +249,29 @@ function renderFood() {
   const totalSugar = nutrientData("sugarG");
   const freeSugar = nutrientData("freeSugarG");
   const fat = nutrientData("fatG");
+  const carbs = nutrientData("carbsG");
   const kcalTarget = Number(day.target?.kcal);
   const freeSugarLimit = Number.isFinite(day.target?.freeSugarG) ? day.target.freeSugarG : Number.isFinite(kcalTarget) ? kcalTarget * 0.10 / 4 : null;
   const fatLimit = Number.isFinite(day.target?.fatG) ? day.target.fatG : Number.isFinite(kcalTarget) ? kcalTarget * 0.30 / 9 : null;
-  const balanceItem = (label, data, limit) => {
-    const hasLimit = Number.isFinite(limit) && limit > 0;
-    const over = hasLimit && data.count > 0 && data.total > limit;
-    const percentage = hasLimit ? Math.round(data.total / limit * 100) : 0;
-    const status = !data.count ? "Sem dados" : over ? "Acima da referência" : data.complete ? "Abaixo da referência até agora" : "Dados parciais; sem conclusão";
-    return `<div class="balance-item${over ? " over" : ""}"><div class="balance-item-top"><span>${label}</span><strong>${data.count ? `${data.complete ? "~" : "≥"}${foodNumber(data.total)} g` : "—"}<small>${hasLimit ? ` / ${foodNumber(limit)} g` : ""}</small></strong>${hasLimit && data.count ? `<b class="balance-percent">${percentage}%</b>` : ""}</div>${hasLimit && data.count ? `<progress class="balance-track" aria-label="${label}" value="${Math.min(data.total, limit)}" max="${limit}">${percentage}%</progress>` : ""}<small class="balance-status">${status} · ${data.count}/${day.items.length} itens</small></div>`;
-  };
+  const proteinTarget = Number(day.target?.proteinG);
+  const carbGuide = Number.isFinite(day.target?.carbsG) ? day.target.carbsG : Number.isFinite(kcalTarget) && Number.isFinite(proteinTarget) && Number.isFinite(fatLimit) ? Math.max(0, (kcalTarget - proteinTarget * 4 - fatLimit * 9) / 4) : null;
   const sugarTotalText = totalSugar.count ? `${totalSugar.complete ? "~" : "≥"}${foodNumber(totalSugar.total)} g` : "sem dados";
-  const balanceCard = `<article class="food-balance-card"><div class="balance-heading"><span class="mini-label">AÇÚCAR E GORDURA</span><small>Referências para ${foodNumber(kcalTarget)} kcal/dia</small></div><div class="balance-grid">${balanceItem("Açúcares livres", freeSugar, freeSugarLimit)}${balanceItem("Gordura total", fat, fatLimit)}</div><p>Açúcares totais: <b>${sugarTotalText}</b> (${totalSugar.count}/${day.items.length} itens). Referências gerais: açúcares livres até 10% das calorias e gordura até 30%. Açúcares livres incluem geleia e mel, mas não o açúcar naturalmente presente no leite ou na fruta. Não são limites clínicos personalizados.</p></article>`;
   const metric = (label, unit, consumed, target) => {
     const remaining = Math.max(0, target - consumed);
     const percent = target > 0 ? Math.round(consumed / target * 100) : 0;
     const restPercent = Math.max(0, 100 - percent);
     return `<article class="food-metric"><div class="metric-top"><div><span class="metric-label">${label}</span><strong>${foodNumber(consumed)}<small> / ${foodNumber(target)} ${unit}</small></strong></div><span class="metric-percent">${percent}%</span></div><progress class="metric-track" aria-label="${label} consumidas" value="${Math.min(consumed, target)}" max="${target}">${percent}%</progress><div class="metric-details"><span><b>${foodNumber(consumed)} ${unit}</b> consumidas · ${percent}%</span><span><b>${foodNumber(remaining)} ${unit}</b> faltam · ${restPercent}%</span></div></article>`;
   };
+  const macroMetric = (label, data, target, kind, detail) => {
+    const hasTarget = Number.isFinite(target) && target > 0;
+    const percentage = hasTarget && data.count ? Math.round(data.total / target * 100) : 0;
+    const over = kind === "limit" && hasTarget && data.count && data.total > target;
+    const status = !data.count ? "Sem dados" : over ? data.complete ? "Acima da referência" : "Acima da referência com dados parciais" : !data.complete ? "Dados parciais; sem conclusão" : kind === "guide" ? "Referência de planejamento" : "Abaixo da referência até agora";
+    return `<article class="food-metric macro-metric${over ? " over" : ""}"><div class="metric-top"><div><span class="metric-label">${label}</span><strong>${data.count ? `${data.complete ? "~" : "≥"}${foodNumber(data.total)}` : "—"}<small>${hasTarget ? ` / ${foodNumber(target)} g` : " g"}</small></strong></div><span class="metric-percent">${hasTarget && data.count ? `${percentage}%` : "—"}</span></div>${hasTarget && data.count ? `<progress class="metric-track" aria-label="${label} consumidos" value="${Math.min(data.total, target)}" max="${target}">${percentage}%</progress>` : ""}<div class="metric-details"><span>${status} · ${data.count}/${day.items.length} itens</span><span>${detail}</span></div></article>`;
+  };
   const items = day.items.length ? day.items.map((item) => `<li><span>${escapeHtml(item.name)}</span><b>${foodNumber(item.kcal)} kcal <small>· ${foodNumber(item.proteinG)} g prot.</small></b></li>`).join("") : `<li>Nenhuma refeição registrada.</li>`;
   const plan = day.plan.length ? day.plan.map((meal) => `<article class="plan-meal"><time>${escapeHtml(meal.time)}</time><div><h4>${escapeHtml(meal.name)}</h4><p>${escapeHtml(meal.description)}</p></div><strong>~${foodNumber(meal.kcal)} kcal<small>~${foodNumber(meal.proteinG)} g proteína</small></strong></article>`).join("") : `<div class="empty">Sem refeições planejadas para o restante do dia.</div>`;
-  $("food-content").innerHTML = `<p class="food-note">${escapeHtml(day.note || "Valores estimados; porções e marcas podem alterar os totais.")}</p><div class="food-metrics">${metric("CALORIAS", "kcal", totals.kcal, day.target.kcal)}${metric("PROTEÍNA", "g", totals.proteinG, day.target.proteinG)}</div>${balanceCard}<div class="food-columns"><section class="food-box"><div class="food-box-head"><p class="eyebrow">CONSUMIDO</p><h3>Registro do dia</h3></div><ul class="food-items">${items}</ul></section><section class="food-box"><div class="food-box-head"><p class="eyebrow">PRÓXIMAS REFEIÇÕES</p><h3>Resto do dia</h3></div><div class="food-plan">${plan}</div><p class="plan-note">Sugestões planejadas. Elas só entram no total quando forem registradas.</p></section></div>`;
+  $("food-content").innerHTML = `<p class="food-note">${escapeHtml(day.note || "Valores estimados; porções e marcas podem alterar os totais.")}</p><div class="food-metrics">${metric("CALORIAS", "kcal", totals.kcal, day.target.kcal)}${metric("PROTEÍNA", "g", totals.proteinG, day.target.proteinG)}${macroMetric("CARBOIDRATO", carbs, carbGuide, "guide", "Guia, não limite")}${macroMetric("GORDURA", fat, fatLimit, "limit", "Gordura total")}${macroMetric("AÇÚCAR", freeSugar, freeSugarLimit, "limit", `Açúcares livres · totais: ${sugarTotalText}`)}</div><p class="food-macro-note">Carboidratos: guia calculado pelas metas provisórias de calorias e proteína após reservar 30% das calorias para gordura. Açúcar: limite de açúcares livres de 10% das calorias, incluindo geleia e mel; o total também inclui açúcares naturais. Valores e referências são estimativas.</p><div class="food-columns"><section class="food-box"><div class="food-box-head"><p class="eyebrow">CONSUMIDO</p><h3>Registro do dia</h3></div><ul class="food-items">${items}</ul></section><section class="food-box"><div class="food-box-head"><p class="eyebrow">PRÓXIMAS REFEIÇÕES</p><h3>Resto do dia</h3></div><div class="food-plan">${plan}</div><p class="plan-note">Sugestões planejadas. Elas só entram no total quando forem registradas.</p></section></div>`;
 }
 
 async function refreshFood() {
