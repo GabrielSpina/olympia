@@ -108,6 +108,18 @@ async function refreshNotebook() {
   } catch (error) { notice(`Não foi possível atualizar o Notebook: ${error.message}`, true); }
 }
 
+async function refreshTreinos() {
+  if (state.mode !== "github" || state.busy) return;
+  const token = localStorage.getItem("olympia-token");
+  if (!token) return;
+  try {
+    const file = await githubFile("treinos.json", token);
+    if (!validDivisions(file.data)) throw new Error("Treinos inválidos no repositório privado.");
+    state.divisions = file.data;
+    renderTreinos();
+  } catch (error) { notice(`Não foi possível atualizar os treinos: ${error.message}`, true); }
+}
+
 async function saveRecord(id, changes) {
   if (state.busy || state.mode === "none") return false;
   state.busy = true;
@@ -297,6 +309,7 @@ function activateTab(name) {
   }
   if (name === "alimentacao") refreshFood();
   if (name === "notebook") refreshNotebook();
+  if (name === "treinos") refreshTreinos();
 }
 
 const todayParts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).map((part) => [part.type, part.value]));
@@ -317,6 +330,7 @@ $("today-button").addEventListener("click", async () => {
 });
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden && !$("notebook-panel").hidden) refreshNotebook();
+  if (!document.hidden && !$("treinos-panel").hidden) refreshTreinos();
 });
 $("division-filter").addEventListener("change", renderTreinos);
 $("food-date").addEventListener("change", renderFood);
