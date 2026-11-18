@@ -49,3 +49,13 @@ dialog{max-height:calc(100dvh - 24px);overflow:auto}
   .notebook-heading-tools{width:100%;align-items:stretch;flex-direction:column}
   #today-button{align-self:flex-start}
 }
+.food-mini-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:-9px}
+.food-mini-metric{display:grid;gap:4px;min-width:0;padding:15px 18px;background:#171411;border:1px solid #57432e;border-left:3px solid #b78d48;border-radius:3px}
+.food-mini-metric:nth-child(2){border-left-color:#a14d47}
+.mini-label{font-family:Impact,'Arial Narrow',sans-serif;color:#cda966;font-size:14px;letter-spacing:.11em}
+.food-mini-metric strong{font-family:Impact,'Arial Narrow',sans-serif;color:#f5ead5;font-size:29px;line-height:1.1}
+.food-mini-metric small,.mini-target,.food-mini-note{color:#bbaa94;font-size:11px;line-height:1.4}
+.mini-target.over{color:#f29b8e;font-weight:700}
+.food-mini-note{margin:-14px 0 0}
+@media(max-width:430px){.food-mini-metrics{gap:8px}.food-mini-metric{padding:12px}.food-mini-metric strong{font-size:24px}.mini-label{font-size:12px}}
+
