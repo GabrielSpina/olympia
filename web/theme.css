@@ -64,4 +64,8 @@ progress.metric-track::-moz-progress-bar{background:linear-gradient(90deg,#a77d3
 .food-metric:nth-child(2) progress.metric-track::-moz-progress-bar{background:linear-gradient(90deg,#8a1720,#dc4d4b)}
 .food-metric.over progress.metric-track::-webkit-progress-value{background:#d45b55}
 .food-metric.over progress.metric-track::-moz-progress-bar{background:#d45b55}
+.metric-remaining{margin-top:15px;color:#f0d49a;font-size:13px;font-weight:700}
+.food-metric.over .metric-remaining{color:#f29b8e}
+.food-metric progress.metric-track{margin:8px 0 0}
+.metric-extra{margin-top:8px;color:#bbaa94;font-size:11px;line-height:1.4}
 
