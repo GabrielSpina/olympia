@@ -271,10 +271,13 @@ function renderFood() {
     $("food-content").innerHTML = `<div class="empty">${state.mode === "none" ? "Conecte seus dados para ver a alimentação." : "Nenhum registro alimentar para este dia."}</div>`;
     return;
   }
-  const totals = day.items.reduce((sum, item) => ({ kcal: sum.kcal + (Number(item.kcal) || 0), proteinG: sum.proteinG + (Number(item.proteinG) || 0) }), { kcal: 0, proteinG: 0 });
+  // Treinos são contexto para planejar horários, não alimentos ou refeições.
+  const foodItems = day.items.filter((item) => !item.activity);
+  const plannedMeals = day.plan.filter((meal) => !meal.activity);
+  const totals = foodItems.reduce((sum, item) => ({ kcal: sum.kcal + (Number(item.kcal) || 0), proteinG: sum.proteinG + (Number(item.proteinG) || 0) }), { kcal: 0, proteinG: 0 });
   const nutrientData = (field) => {
-    const known = day.items.filter((item) => Number.isFinite(item[field]) && item[field] >= 0);
-    return { total: known.reduce((sum, item) => sum + item[field], 0), count: known.length, complete: known.length === day.items.length };
+    const known = foodItems.filter((item) => Number.isFinite(item[field]) && item[field] >= 0);
+    return { total: known.reduce((sum, item) => sum + item[field], 0), count: known.length, complete: known.length === foodItems.length };
   };
   const totalSugar = nutrientData("sugarG");
   const freeSugar = nutrientData("freeSugarG");
@@ -294,16 +297,18 @@ function renderFood() {
   };
   const macroMetric = (label, data, target, kind, detail) => {
     const hasTarget = Number.isFinite(target) && target > 0;
-    const percentage = hasTarget && data.count ? Math.round(data.total / target * 100) : 0;
-    const over = kind === "limit" && hasTarget && data.count && data.total > target;
-    const remaining = hasTarget && data.count ? target - data.total : null;
-    const balance = remaining === null ? "Sem dados suficientes" : remaining < 0 ? `${foodNumber(-remaining)} g acima da referência` : kind === "guide" ? `${foodNumber(remaining)} g faltam para o guia` : `${data.complete ? "" : "Até "}${foodNumber(remaining)} g de margem`;
-    const extra = [detail, data.count && !data.complete ? `Dados parciais: ${data.count}/${day.items.length} itens` : ""].filter(Boolean).join(" · ");
-    return `<article class="food-metric macro-metric${over ? " over" : ""}"><div class="metric-top"><span class="metric-label">${label}</span><span class="metric-percent">${hasTarget && data.count ? `${percentage}%` : "—"}</span></div><div class="metric-values"><strong>${data.count ? `${data.complete ? "~" : "≥"}${foodNumber(data.total)}` : "—"}<small>${hasTarget ? ` / ${foodNumber(target)} g` : " g"}</small></strong><span class="metric-remaining">${balance}</span></div>${hasTarget && data.count ? `<progress class="metric-track" aria-label="${label} consumidos" value="${Math.min(data.total, target)}" max="${target}">${percentage}%</progress>` : ""}${extra ? `<div class="metric-extra">${extra}</div>` : ""}</article>`;
+    // Um total parcial não pode parecer um percentual completo nem uma margem segura.
+    const canMeasure = hasTarget && data.count > 0 && data.complete;
+    const percentage = canMeasure ? Math.round(data.total / target * 100) : null;
+    const over = kind === "limit" && canMeasure && data.total > target;
+    const remaining = canMeasure ? target - data.total : null;
+    const balance = !data.count ? "Sem dados registrados" : !data.complete ? "Faltam dados de alguns alimentos" : remaining < 0 ? `${foodNumber(-remaining)} g acima da referência` : kind === "guide" ? `${foodNumber(remaining)} g para o guia` : `${foodNumber(remaining)} g de margem`;
+    const extra = [detail, data.count && !data.complete ? `Dados parciais: ${data.count}/${foodItems.length} itens; percentual indisponível` : data.count ? "Valores aproximados conforme os registros" : ""].filter(Boolean).join(" · ");
+    return `<article class="food-metric macro-metric${over ? " over" : ""}"><div class="metric-top"><span class="metric-label">${label}</span><span class="metric-percent">${canMeasure ? `${percentage}%` : "—"}</span></div><div class="metric-values"><strong>${data.count ? `${data.complete ? "~" : "≥"}${foodNumber(data.total)}` : "—"}<small>${hasTarget ? ` / ${foodNumber(target)} g` : " g"}</small></strong><span class="metric-remaining">${balance}</span></div>${canMeasure ? `<progress class="metric-track" aria-label="${label} consumidos" value="${Math.max(0, Math.min(data.total, target))}" max="${target}">${percentage}%</progress>` : ""}${extra ? `<div class="metric-extra">${extra}</div>` : ""}</article>`;
   };
-  const items = day.items.length ? day.items.map((item) => `<li><span>${escapeHtml(item.name)}</span><b>${foodNumber(item.kcal)} kcal <small>· ${foodNumber(item.proteinG)} g prot.</small></b></li>`).join("") : `<li>Nenhuma refeição registrada.</li>`;
-  const plan = day.plan.length ? day.plan.map((meal) => `<article class="plan-meal"><time>${escapeHtml(meal.time)}</time><div><h4>${escapeHtml(meal.name)}</h4><p>${escapeHtml(meal.description)}</p></div><strong>~${foodNumber(meal.kcal)} kcal<small>~${foodNumber(meal.proteinG)} g proteína</small></strong></article>`).join("") : `<div class="empty">Sem refeições planejadas para o restante do dia.</div>`;
-  $("food-content").innerHTML = `<div class="food-metrics">${metric("CALORIAS", "kcal", totals.kcal, day.target.kcal)}${metric("PROTEÍNA", "g", totals.proteinG, day.target.proteinG)}${macroMetric("CARBOIDRATO", carbs, carbGuide, "guide", "Guia, não limite")}${macroMetric("GORDURA", fat, fatLimit, "limit", "")}${macroMetric("AÇÚCAR", freeSugar, freeSugarLimit, "limit", `Açúcares totais: ${sugarTotalText}`)}</div><p class="food-macro-note">Carboidratos: guia calculado pelas metas provisórias de calorias e proteína após reservar 30% das calorias para gordura. Açúcar: limite de açúcares livres de 10% das calorias, incluindo geleia e mel; o total também inclui açúcares naturais. Valores e referências são estimativas.</p><div class="food-columns"><section class="food-box"><div class="food-box-head"><p class="eyebrow">CONSUMIDO</p><h3>Registro do dia</h3></div><ul class="food-items">${items}</ul></section><section class="food-box"><div class="food-box-head"><p class="eyebrow">PRÓXIMAS REFEIÇÕES</p><h3>Resto do dia</h3></div><div class="food-plan">${plan}</div><p class="plan-note">Sugestões planejadas. Elas só entram no total quando forem registradas.</p></section></div>`;
+  const items = foodItems.length ? foodItems.map((item) => `<li><span>${escapeHtml(item.name)}</span><b>${foodNumber(item.kcal)} kcal <small>· ${foodNumber(item.proteinG)} g prot.</small></b></li>`).join("") : `<li>Nenhuma refeição registrada.</li>`;
+  const plan = plannedMeals.length ? plannedMeals.map((meal) => `<article class="plan-meal"><time>${escapeHtml(meal.time)}</time><div><h4>${escapeHtml(meal.name)}</h4><p>${escapeHtml(meal.description)}</p></div><strong>~${foodNumber(meal.kcal)} kcal<small>~${foodNumber(meal.proteinG)} g proteína</small></strong></article>`).join("") : `<div class="empty">Sem refeições planejadas para o restante do dia.</div>`;
+  $("food-content").innerHTML = `<div class="food-metrics">${metric("CALORIAS", "kcal", totals.kcal, day.target.kcal)}${metric("PROTEÍNA", "g", totals.proteinG, day.target.proteinG)}${macroMetric("CARBOIDRATO", carbs, carbGuide, "guide", "Guia, não limite")}${macroMetric("GORDURA", fat, fatLimit, "limit", "")}${macroMetric("AÇÚCAR", freeSugar, freeSugarLimit, "limit", `Açúcares livres (adicionados); totais: ${sugarTotalText}`)}</div><p class="food-macro-note">Carboidratos: guia calculado pelas metas provisórias de calorias e proteína após reservar 30% das calorias para gordura. Açúcar: limite de açúcares livres de 10% das calorias, incluindo geleia e mel; o total também inclui açúcares naturais. Valores e referências são estimativas. Medidores sem dados completos exibem a cobertura disponível, nunca zero ou uma porcentagem parcial como se fosse o total.</p><div class="food-columns"><section class="food-box"><div class="food-box-head"><p class="eyebrow">CONSUMIDO</p><h3>Registro do dia</h3></div><ul class="food-items">${items}</ul></section><section class="food-box"><div class="food-box-head"><p class="eyebrow">PRÓXIMAS REFEIÇÕES</p><h3>Resto do dia</h3></div><div class="food-plan">${plan}</div><p class="plan-note">Sugestões planejadas. Elas só entram no total quando forem registradas.</p></section></div>`;
 }
 
 async function refreshFood() {
