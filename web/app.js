@@ -241,7 +241,7 @@ function renderTreinos() {
   const division = state.divisions.find((d) => d.name === selected) || state.divisions[0];
   if (!division) { $("training-grid").innerHTML = '<div class="empty">Conecte seus dados para ver os treinos.</div>'; return; }
   if (division.name === "GymDivision 13-2" || division.name === "GymDivision 13-1") {
-    const columns = division.name === "GymDivision 13-2" ? ["B", "C", "D", "E", "F"] : ["B", "D", "E", "C"];
+    const columns = division.name === "GymDivision 13-2" ? ["B", "C", "D", "E", "F", "G", "H"] : ["B", "D", "E", "C"];
     const header = division.rows.find((r) => r.row === 1)?.cells || {};
     $("training-grid").className = "training-grid";
     $("training-grid").innerHTML = columns.map((column) => {
